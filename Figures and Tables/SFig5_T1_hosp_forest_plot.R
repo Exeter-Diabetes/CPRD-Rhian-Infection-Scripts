@@ -62,7 +62,7 @@ index.date.minus1y <- index.date - years(1)
 cohort <- cohort %>% filter(regstartdate <= index.date.minus1y)
 
 #Exclude people with diabetes diagnosed during study
-cohort <- cohort %>% filter(dm_diag_date <= index.date)
+cohort <- cohort %>% filter(dm_diag_date_all <= index.date)
 
 #Edit age groups
 cohort <- cohort %>% mutate(age_cat = ifelse(age_at_index<18, "<18", ifelse(age_at_index <40 & age_at_index>=18, "18-39", ifelse(age_at_index<50 & age_at_index>=40, "40-49", ifelse(age_at_index<60 & age_at_index>=50, "50-59", ifelse(age_at_index<70 & age_at_index>=60, "60-69", ifelse(age_at_index<80 & age_at_index>=70, "70-79", ifelse(age_at_index>=80, "80+", NA))))))))
@@ -142,7 +142,7 @@ index.date.minus1y <- index.date - years(1)
 cohort <- cohort %>% filter(regstartdate <= index.date.minus1y)
 
 #Exclude people with diabetes diagnosed during study
-cohort <- cohort %>% filter(dm_diag_date <= index.date)
+cohort <- cohort %>% filter(dm_diag_date_all <= index.date)
 
 #Edit age groups
 cohort <- cohort %>% mutate(age_cat = ifelse(age_at_index<18, "<18", ifelse(age_at_index <40 & age_at_index>=18, "18-39", ifelse(age_at_index<50 & age_at_index>=40, "40-49", ifelse(age_at_index<60 & age_at_index>=50, "50-59", ifelse(age_at_index<70 & age_at_index>=60, "60-69", ifelse(age_at_index<80 & age_at_index>=70, "70-79", ifelse(age_at_index>=80, "80+", NA))))))))
@@ -224,7 +224,7 @@ index.date.minus1y <- index.date - years(1)
 cohort <- cohort %>% filter(regstartdate <= index.date.minus1y)
 
 #Exclude people with diabetes diagnosed during study
-cohort <- cohort %>% filter(dm_diag_date <= index.date)
+cohort <- cohort %>% filter(dm_diag_date_all <= index.date)
 
 #Edit age groups
 cohort <- cohort %>% mutate(age_cat = ifelse(age_at_index<18, "<18", ifelse(age_at_index <40 & age_at_index>=18, "18-39", ifelse(age_at_index<50 & age_at_index>=40, "40-49", ifelse(age_at_index<60 & age_at_index>=50, "50-59", ifelse(age_at_index<70 & age_at_index>=60, "60-69", ifelse(age_at_index<80 & age_at_index>=70, "70-79", ifelse(age_at_index>=80, "80+", NA))))))))

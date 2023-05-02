@@ -56,7 +56,7 @@ cohort <- cohort %>% mutate(survival_date = end.date) %>% mutate(survival_date =
 cohort <- collect(cohort)
 
 #Filter cohort
-cohort <- cohort %>% filter(diabetes_type == "type 2" & dm_diag_age >=20 & age_at_index >=18)
+cohort <- cohort %>% filter(diabetes_type == "type 2" & dm_diag_age_all >=20 & age_at_index >=18)
 
 #Exclude those with cystic fibrosis
 cohort <- cohort %>% filter(is.na(cysticfibrosis_diag_date))
@@ -66,7 +66,7 @@ index.date.minus1y <- index.date - years(1)
 cohort <- cohort %>% filter(regstartdate <= index.date.minus1y)
 
 #Exclude people with diabetes diagnosed during study
-cohort <- cohort %>% filter(dm_diag_date <= index.date)
+cohort <- cohort %>% filter(dm_diag_date_all <= index.date)
 
 #Code subgroups as binary variables
 cohort <- cohort %>% mutate(over70 = ifelse(age_at_index >=70, 1, 0), complications = ifelse(number_complications !=0 | ckd_stage == "Stage 3a" | ckd_stage == "Stage 3b" | ckd_stage == "Stage 4" | ckd_stage == "Stage 5", 1, 0),
@@ -292,7 +292,7 @@ cohort <- cohort %>% mutate(survival_date = end.date) %>% mutate(survival_date =
 cohort <- collect(cohort)
 
 #Filter cohort
-cohort <- cohort %>% filter(diabetes_type == "type 2" & dm_diag_age >=20 & age_at_index >=18)
+cohort <- cohort %>% filter(diabetes_type == "type 2" & dm_diag_age_all >=20 & age_at_index >=18)
 
 #Exclude those with cystic fibrosis
 cohort <- cohort %>% filter(is.na(cysticfibrosis_diag_date))
@@ -302,7 +302,7 @@ index.date.minus1y <- index.date - years(1)
 cohort <- cohort %>% filter(regstartdate <= index.date.minus1y)
 
 #Exclude people with diabetes diagnosed during study
-cohort <- cohort %>% filter(dm_diag_date <= index.date)
+cohort <- cohort %>% filter(dm_diag_date_all <= index.date)
 
 #Code subgroups as binary variables
 cohort <- cohort %>% mutate(over70 = ifelse(age_at_index >=70, 1, 0), complications = ifelse(number_complications !=0 | ckd_stage == "Stage 3a" | ckd_stage == "Stage 3b" | ckd_stage == "Stage 4" | ckd_stage == "Stage 5", 1, 0),
@@ -529,7 +529,7 @@ cohort <- cohort %>% mutate(survival_date = end.date) %>% mutate(survival_date =
 cohort <- collect(cohort)
 
 #Filter cohort
-cohort <- cohort %>% filter(diabetes_type == "type 2" & dm_diag_age >=20 & age_at_index >=18)
+cohort <- cohort %>% filter(diabetes_type == "type 2" & dm_diag_age_all >=20 & age_at_index >=18)
 
 #Exclude those with cystic fibrosis
 cohort <- cohort %>% filter(is.na(cysticfibrosis_diag_date))
@@ -539,7 +539,7 @@ index.date.minus1y <- index.date - years(1)
 cohort <- cohort %>% filter(regstartdate <= index.date.minus1y)
 
 #Exclude people with diabetes diagnosed during study
-cohort <- cohort %>% filter(dm_diag_date <= index.date)
+cohort <- cohort %>% filter(dm_diag_date_all <= index.date)
 
 #Code subgroups as binary variables
 cohort <- cohort %>% mutate(over70 = ifelse(age_at_index >=70, 1, 0), complications = ifelse(number_complications !=0 | ckd_stage == "Stage 3a" | ckd_stage == "Stage 3b" | ckd_stage == "Stage 4" | ckd_stage == "Stage 5", 1, 0),
@@ -770,7 +770,7 @@ cohort <- cohort %>% mutate(survival_date = end.date) %>% mutate(survival_date =
 cohort <- collect(cohort)
 
 #Filter cohort
-cohort <- cohort %>% filter(diabetes_type == "type 2" & dm_diag_age >=20 & age_at_index >=18)
+cohort <- cohort %>% filter(diabetes_type == "type 2" & dm_diag_age_all >=20 & age_at_index >=18)
 
 #Exclude those with cystic fibrosis
 cohort <- cohort %>% filter(is.na(cysticfibrosis_diag_date))
@@ -780,7 +780,7 @@ index.date.minus1y <- index.date - years(1)
 cohort <- cohort %>% filter(regstartdate <= index.date.minus1y)
 
 #Exclude people with diabetes diagnosed during study
-cohort <- cohort %>% filter(dm_diag_date <= index.date)
+cohort <- cohort %>% filter(dm_diag_date_all <= index.date)
 
 #Code subgroups as binary variables
 cohort <- cohort %>% mutate(over70 = ifelse(age_at_index >=70, 1, 0), complications = ifelse(number_complications !=0 | ckd_stage == "Stage 3a" | ckd_stage == "Stage 3b" | ckd_stage == "Stage 4" | ckd_stage == "Stage 5", 1, 0),
@@ -1030,7 +1030,7 @@ cohort <- cohort %>% mutate(survival_date = end.date) %>% mutate(survival_date =
 cohort <- collect(cohort)
 
 #Filter cohort
-cohort <- cohort %>% filter(diabetes_type == "type 2" & dm_diag_age >=20 & age_at_index >=18)
+cohort <- cohort %>% filter(diabetes_type == "type 2" & dm_diag_age_all >=20 & age_at_index >=18)
 
 #Exclude those with cystic fibrosis
 cohort <- cohort %>% filter(is.na(cysticfibrosis_diag_date))
@@ -1040,7 +1040,7 @@ index.date.minus1y <- index.date - years(1)
 cohort <- cohort %>% filter(regstartdate <= index.date.minus1y)
 
 #Exclude people with diabetes diagnosed during study
-cohort <- cohort %>% filter(dm_diag_date <= index.date)
+cohort <- cohort %>% filter(dm_diag_date_all <= index.date)
 
 #Code subgroups as binary variables
 cohort <- cohort %>% mutate(over70 = ifelse(age_at_index >=70, 1, 0), complications = ifelse(number_complications !=0 | ckd_stage == "Stage 3a" | ckd_stage == "Stage 3b" | ckd_stage == "Stage 4" | ckd_stage == "Stage 5", 1, 0),
@@ -1290,7 +1290,7 @@ cohort <- cohort %>% mutate(survival_date = end.date) %>% mutate(survival_date =
 cohort <- collect(cohort)
 
 #Filter cohort
-cohort <- cohort %>% filter(diabetes_type == "type 2" & dm_diag_age >=20 & age_at_index >=18)
+cohort <- cohort %>% filter(diabetes_type == "type 2" & dm_diag_age_all >=20 & age_at_index >=18)
 
 #Exclude those with cystic fibrosis
 cohort <- cohort %>% filter(is.na(cysticfibrosis_diag_date))
@@ -1300,7 +1300,7 @@ index.date.minus1y <- index.date - years(1)
 cohort <- cohort %>% filter(regstartdate <= index.date.minus1y)
 
 #Exclude people with diabetes diagnosed during study
-cohort <- cohort %>% filter(dm_diag_date <= index.date)
+cohort <- cohort %>% filter(dm_diag_date_all <= index.date)
 
 #Code subgroups as binary variables
 cohort <- cohort %>% mutate(over70 = ifelse(age_at_index >=70, 1, 0), complications = ifelse(number_complications !=0 | ckd_stage == "Stage 3a" | ckd_stage == "Stage 3b" | ckd_stage == "Stage 4" | ckd_stage == "Stage 5", 1, 0),
@@ -1555,7 +1555,7 @@ cohort <- cohort %>% mutate(survival_date = end.date) %>% mutate(survival_date =
 cohort <- collect(cohort)
 
 #Filter cohort
-cohort <- cohort %>% filter(diabetes_type == "type 2" & dm_diag_age >=20 & age_at_index >=18)
+cohort <- cohort %>% filter(diabetes_type == "type 2" & dm_diag_age_all >=20 & age_at_index >=18)
 
 #Exclude those with cystic fibrosis
 cohort <- cohort %>% filter(is.na(cysticfibrosis_diag_date))
@@ -1565,7 +1565,7 @@ index.date.minus1y <- index.date - years(1)
 cohort <- cohort %>% filter(regstartdate <= index.date.minus1y)
 
 #Exclude people with diabetes diagnosed during study
-cohort <- cohort %>% filter(dm_diag_date <= index.date)
+cohort <- cohort %>% filter(dm_diag_date_all <= index.date)
 
 #Code subgroups as binary variables
 cohort <- cohort %>% mutate(over70 = ifelse(age_at_index >=70, 1, 0), complications = ifelse(number_complications !=0 | ckd_stage == "Stage 3a" | ckd_stage == "Stage 3b" | ckd_stage == "Stage 4" | ckd_stage == "Stage 5", 1, 0),
@@ -1817,7 +1817,7 @@ cohort <- cohort %>% mutate(survival_date = end.date) %>% mutate(survival_date =
 cohort <- collect(cohort)
 
 #Filter cohort
-cohort <- cohort %>% filter(diabetes_type == "type 2" & dm_diag_age >=20 & age_at_index >=18)
+cohort <- cohort %>% filter(diabetes_type == "type 2" & dm_diag_age_all >=20 & age_at_index >=18)
 
 #Exclude those with cystic fibrosis
 cohort <- cohort %>% filter(is.na(cysticfibrosis_diag_date))
@@ -1827,7 +1827,7 @@ index.date.minus1y <- index.date - years(1)
 cohort <- cohort %>% filter(regstartdate <= index.date.minus1y)
 
 #Exclude people with diabetes diagnosed during study
-cohort <- cohort %>% filter(dm_diag_date <= index.date)
+cohort <- cohort %>% filter(dm_diag_date_all <= index.date)
 
 #Code subgroups as binary variables
 cohort <- cohort %>% mutate(over70 = ifelse(age_at_index >=70, 1, 0), complications = ifelse(number_complications !=0 | ckd_stage == "Stage 3a" | ckd_stage == "Stage 3b" | ckd_stage == "Stage 4" | ckd_stage == "Stage 5", 1, 0),
@@ -2079,7 +2079,7 @@ cohort <- cohort %>% mutate(survival_date = end.date) %>% mutate(survival_date =
 cohort <- collect(cohort)
 
 #Filter cohort
-cohort <- cohort %>% filter(diabetes_type == "type 2" & dm_diag_age >=20 & age_at_index >=18)
+cohort <- cohort %>% filter(diabetes_type == "type 2" & dm_diag_age_all >=20 & age_at_index >=18)
 
 #Exclude those with cystic fibrosis
 cohort <- cohort %>% filter(is.na(cysticfibrosis_diag_date))
@@ -2089,7 +2089,7 @@ index.date.minus1y <- index.date - years(1)
 cohort <- cohort %>% filter(regstartdate <= index.date.minus1y)
 
 #Exclude people with diabetes diagnosed during study
-cohort <- cohort %>% filter(dm_diag_date <= index.date)
+cohort <- cohort %>% filter(dm_diag_date_all <= index.date)
 
 #Code subgroups as binary variables
 cohort <- cohort %>% mutate(over70 = ifelse(age_at_index >=70, 1, 0), complications = ifelse(number_complications !=0 | ckd_stage == "Stage 3a" | ckd_stage == "Stage 3b" | ckd_stage == "Stage 4" | ckd_stage == "Stage 5", 1, 0),

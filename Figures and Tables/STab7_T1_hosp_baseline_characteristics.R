@@ -56,7 +56,7 @@ index.date.minus1y <- index.date - years(1)
 cohort <- cohort %>% filter(regstartdate <= index.date.minus1y)
 
 #Exclude people with diabetes diagnosed during study
-cohort <- cohort %>% filter(dm_diag_date <= index.date)
+cohort <- cohort %>% filter(dm_diag_date_all <= index.date)
 
 #Mean follow-up
 mean(cohort$survival_time)
@@ -145,7 +145,7 @@ index.date.minus1y <- index.date - years(1)
 cohort <- cohort %>% filter(regstartdate <= index.date.minus1y)
 
 #Exclude people with diabetes diagnosed during study
-cohort <- cohort %>% filter(dm_diag_date <= index.date)
+cohort <- cohort %>% filter(dm_diag_date_all <= index.date)
 
 #Mean follow-up
 mean(cohort$survival_time)
@@ -235,7 +235,7 @@ index.date.minus1y <- index.date - years(1)
 cohort <- cohort %>% filter(regstartdate <= index.date.minus1y)
 
 #Exclude people with diabetes diagnosed during study
-cohort <- cohort %>% filter(dm_diag_date <= index.date)
+cohort <- cohort %>% filter(dm_diag_date_all <= index.date)
 
 #Mean follow-up
 mean(cohort$survival_time)

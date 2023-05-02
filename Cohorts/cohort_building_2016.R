@@ -38,9 +38,9 @@ index.date <- as.Date("2016-09-01")
 cohort.name <- "sep2016" #this should be pasted into all relevant table names when caching
 ################################################################################
 
-##Load table already generated (in t1t2_setup) or copy from another analysis (how to do this in MySQL is on the github, alternatively connect to other analysis, then reconnect and cache)
+##Load table already generated or copy from another analysis (how to do this in MySQL is on the github, alternatively connect to other analysis, then reconnect and cache)
 #Includes patid, diabetes diagnosis date, diabetes diagnosis flag, diabetes diagnosis age, dob, diabetes type
-all_t1t2 <- all_t1t2 %>% analysis$cached("all_t1t2_cohort", unique_indexes="patid",indexes="dm_diag_date")
+all_t1t2 <- all_t1t2 %>% analysis$cached("t1t2_new", unique_indexes="patid",indexes="dm_diag_date")
 
 #ONS death dates
 ons_deathdate <- cprd$tables$onsDeath %>%
@@ -48,27 +48,26 @@ ons_deathdate <- cprd$tables$onsDeath %>%
   analysis$cached("all_ons_ddates", unique_indexes = "patid", indexes= "ons_ddate")
 
 #Getting a cohort of people actively registered and alive on index date
-active_cohort <- all_t1t2 %>% 
-  #Don't need to drop those diagnoses after index?
-  #filter(dm_diag_date<=index.date) %>% 
+active_cohort <- all_t1t2 %>% select(-regstartdate) %>%
   #Categorise diagnosis age
-  mutate(diag_age_cat = ifelse(dm_diag_age<18, "0-17", ifelse(dm_diag_age<30 & dm_diag_age>=18, "18-29", ifelse(dm_diag_age<50 & dm_diag_age>=30, "30-49", ifelse(dm_diag_age<65 & dm_diag_age>=50, "50-64", ifelse(dm_diag_age<75 & dm_diag_age>=65, "65-74", ifelse(dm_diag_age>=75, "75+", NA))))))) %>%
+  mutate(diag_age_cat = ifelse(dm_diag_age_all<18, "0-17", ifelse(dm_diag_age_all<30 & dm_diag_age_all>=18, "18-29", ifelse(dm_diag_age_all<50 & dm_diag_age_all>=30, "30-49", ifelse(dm_diag_age_all<65 & dm_diag_age_all>=50, "50-64", ifelse(dm_diag_age_all<75 & dm_diag_age_all>=65, "65-74", ifelse(dm_diag_age_all>=75, "75+", NA))))))) %>%
   #Join valid date lookup and filter people actively registered
   inner_join(cprd$tables$validDateLookup) %>% 
   filter(gp_ons_end_date>=index.date) %>% 
   inner_join(cprd$tables$patient) %>% 
   filter(regstartdate<=index.date) %>% 
-  select(patid, pracid, gender, dob, dm_diag_date, dm_diag_flag, dm_diag_age, diag_age_cat, diabetes_type, regstartdate, regenddate, cprd_ddate) %>%
+  select(patid, pracid, gender, dob, dm_diag_date_all, dm_diag_flag, dm_diag_age_all, diag_age_cat, diabetes_type, dm_diag_before_reg, with_hes, gp_record_end,
+         regstartdate, regenddate, cprd_ddate) %>%
   #Join ONS death dates, take ONS death date as death date, if missing use CPRD death date if have one
   left_join (ons_deathdate, by = "patid") %>%
   mutate(dod = ifelse(!is.na(ons_ddate), ons_ddate, cprd_ddate)) %>%
   #Work out diabetes duration and age at the index date and categorise
-  mutate(dm_duration_at_index=datediff(index.date,dm_diag_date)/365.25,age_at_index=datediff(index.date,dob)/365.25) %>% 
+  mutate(dm_duration_at_index=datediff(index.date,dm_diag_date_all)/365.25,age_at_index=datediff(index.date,dob)/365.25) %>% 
   mutate(age_cat = ifelse(age_at_index<40, "<40", ifelse(age_at_index<50 & age_at_index>=40, "40-49", ifelse(age_at_index<60 & age_at_index>=50, "50-59", ifelse(age_at_index<70 & age_at_index>=60, "60-69", ifelse(age_at_index<80 & age_at_index>=70, "70-79", ifelse(age_at_index< 90 & age_at_index>=80, "80-89", ifelse(age_at_index >= 90, "90+", NA)))))))) %>%
   mutate(duration_cat = ifelse(dm_duration_at_index<1, "<1", ifelse(dm_duration_at_index<3 & dm_duration_at_index>=1, "1-2", ifelse(dm_duration_at_index<6 & dm_duration_at_index>=3, "3-5", ifelse(dm_duration_at_index<10 & dm_duration_at_index>=6, "6-9", ifelse(dm_duration_at_index<15 & dm_duration_at_index>=10, "10-14", ifelse(dm_duration_at_index<20 & dm_duration_at_index>=15, "15-19", ifelse(dm_duration_at_index>=20, "20+", NA)))))))) %>%
   analysis$cached(paste0(cohort.name,"_cohort"), unique_indexes="patid")
 
-active_cohort %>% count()
+active_cohort %>% count() #635808
 active_cohort_patids <- active_cohort %>% select(patid) %>% analysis$cached(paste0(cohort.name,"_cohort_patids"), unique_indexes="patid")
 
 ################################################################################
@@ -252,7 +251,7 @@ for (i in conditions) {
   print(i)
   raw_tablename <- paste0("all_",i,"_raw")
   date_tablename <- paste0("first_",i,"_gp")
-  tabledata <- get(raw_tablename) %>% inner_join(cprd$tables$validDateLookup) %>% filter(obsdate>=min_dob & obsdate<=gp_ons_end_date) %>% group_by(patid) %>% summarise(date =min(obsdate,na.rm=TRUE)) %>% ungroup() %>% analysis$cached(date_tablename,indexes=c("patid","date"))
+  tabledata <- get(raw_tablename) %>% inner_join(cprd$tables$validDateLookup) %>% filter(obsdate>=min_dob & obsdate<=gp_ons_end_date) %>% group_by(patid) %>% summarise(date =min(obsdate,na.rm=TRUE)) %>% ungroup() #%>% analysis$cached(date_tablename,indexes=c("patid","date"))
   assign(date_tablename,tabledata)
   print(tabledata %>% count())
 }
@@ -278,7 +277,7 @@ for (i in conditions) {
   if(exists(raw_tablename)) {
   print(i)
   date_tablename <- paste0("first_",i,"_hes")
-  tabledata <- get(raw_tablename) %>% inner_join(cprd$tables$validDateLookup) %>% filter(epistart>=min_dob) %>% group_by(patid) %>% summarise(date =min(epistart,na.rm=TRUE)) %>% ungroup() %>% analysis$cached(date_tablename,indexes=c("patid","date"))
+  tabledata <- get(raw_tablename) %>% inner_join(cprd$tables$validDateLookup) %>% filter(epistart>=min_dob) %>% group_by(patid) %>% summarise(date =min(epistart,na.rm=TRUE)) %>% ungroup() #%>% analysis$cached(date_tablename,indexes=c("patid","date"))
   assign(date_tablename,tabledata)
   print(tabledata %>% count())
   }
@@ -305,7 +304,7 @@ for (i in conditions) {
   if(exists(raw_tablename)) {
   print(i)
   date_tablename <- paste0("first_",i,"_op")
-  tabledata <- get(raw_tablename) %>% inner_join(cprd$tables$validDateLookup) %>% filter(evdate>=min_dob) %>% group_by(patid) %>% summarise(date =min(evdate,na.rm=TRUE)) %>% ungroup() %>% analysis$cached(date_tablename,indexes=c("patid","date"))
+  tabledata <- get(raw_tablename) %>% inner_join(cprd$tables$validDateLookup) %>% filter(evdate>=min_dob) %>% group_by(patid) %>% summarise(date =min(evdate,na.rm=TRUE)) %>% ungroup() #%>% analysis$cached(date_tablename,indexes=c("patid","date"))
   assign(date_tablename,tabledata)
   print(tabledata %>% count())
   }
