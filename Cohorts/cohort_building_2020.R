@@ -28,8 +28,25 @@ cprd = CPRDData$new(cprdEnv = "test-remote",cprdConf = "C:/Users/rh530/.aurum.ya
 codesets = cprd$codesets()
 codes = codesets$getAllCodeSetVersion(v = "31/10/2021")
 
-#Setting up/loading analysis test
+#Connect to 'all' analysis to get all diabetes cohort table
+#analysis = cprd$analysis("all")
+#all_diabetes <- all_diabetes %>% analysis$cached("diabetes_cohort", unique_indexes="patid",indexes=c("gender", "dob", "dm_diag_date_all", "dm_diag_age_all", "diabetes_type"))
+
+#Connect to 'Rhian_covid' analysis
 analysis = cprd$analysis("Rhian_covid")
+
+#Save all diabetes table
+#all_diabetes <- all_diabetes %>% analysis$cached("all_diabetes_cohort", unique_indexes="patid",indexes=c("gender", "dob", "dm_diag_date_all", "dm_diag_age_all", "diabetes_type"))
+#all_diabetes %>% count() #1138179
+
+#Filter just T1s and T2s
+#all_t1t2 <- all_diabetes %>% filter(diabetes_type == "type 1" | diabetes_type == "type 2")
+
+##Save/ load table of all patients with T1/T2 (copied from 'all' analysis as above)
+all_t1t2 <- all_t1t2 %>% analysis$cached("t1t2_new", unique_indexes="patid",indexes=c("gender", "dob", "dm_diag_date_all", "dm_diag_age_all", "diabetes_type"))
+all_t1t2 %>% count() #1120071
+#Select variables wanted, includes diabetes diagnosis date, diabetes diagnosis age, dob, diabetes type
+all_t1t2 <- all_t1t2 %>% select(patid, dob, dm_diag_date_all, dm_diag_flag, dm_diag_age_all, dm_diag_before_reg, diabetes_type, with_hes, gp_record_end)
 
 ################################################################################
 #Setting cohort information
@@ -38,17 +55,13 @@ index.date <- as.Date("2020-02-01")
 cohort.name <- "feb2020" #this should be pasted into all relevant table names when caching
 ################################################################################
 
-##Load table already generated or copy from another analysis (how to do this in MySQL is on the github, alternatively connect to other analysis, then reconnect and cache)
-#Includes patid, diabetes diagnosis date, diabetes diagnosis flag, diabetes diagnosis age, dob, diabetes type
-all_t1t2 <- all_t1t2 %>% analysis$cached("t1t2_new", unique_indexes="patid",indexes="dm_diag_date")
-
 #ONS death dates
 ons_deathdate <- cprd$tables$onsDeath %>%
   select(patid, ons_ddate = dod) %>%
   analysis$cached("all_ons_ddates", unique_indexes = "patid", indexes= "ons_ddate")
 
 #Getting a cohort of people actively registered and alive on index date
-active_cohort <- all_t1t2 %>% select(-regstartdate) %>%
+active_cohort <- all_t1t2 %>%
   #Categorise diagnosis age
   mutate(diag_age_cat = ifelse(dm_diag_age_all<18, "0-17", ifelse(dm_diag_age_all<30 & dm_diag_age_all>=18, "18-29", ifelse(dm_diag_age_all<50 & dm_diag_age_all>=30, "30-49", ifelse(dm_diag_age_all<65 & dm_diag_age_all>=50, "50-64", ifelse(dm_diag_age_all<75 & dm_diag_age_all>=65, "65-74", ifelse(dm_diag_age_all>=75, "75+", NA))))))) %>%
   #Join valid date lookup and filter people actively registered
@@ -87,19 +100,19 @@ ethnicity_raw <- cprd$tables$observation %>%
   left_join (codes$ethnicity_16cat, by = "medcodeid") %>%
   analysis$cached("all_ethnicity_raw", indexes= c("patid", "ethnicity_5cat_cat", "ethnicity_16cat_cat"))
 
-#Drop ethnicity unknown categories (eth16 =17/ eth5 =5)
-ethnicity_all <- ethnicity_raw %>% select(patid, obsdate, medcodeid, eth16= ethnicity_16cat_cat, eth5 = ethnicity_5cat_cat) %>% filter(eth5 != 5) %>% distinct() 
+#Drop ethnicity unknown categories (eth5 =5)
+ethnicity_all <- ethnicity_raw %>% select(patid, obsdate, medcodeid, eth5 = ethnicity_5cat_cat) %>% filter(eth5 != 5) %>% distinct() 
 
 #Find most commonly recorded ethnicity for each person with an ethnicity observation
-eth_most_common <- ethnicity_all %>% group_by(patid, eth5, eth16) %>% summarise(n = n()) %>% ungroup() %>% group_by(patid) %>% filter(n == max(n, na.rm =TRUE)) %>%
-  select(patid, eth16,eth5) %>% distinct() %>% filter(n()==1) %>% ungroup(patid)
+eth_most_common <- ethnicity_all %>% group_by(patid, eth5) %>% summarise(n = n()) %>% ungroup() %>% group_by(patid) %>% filter(n == max(n, na.rm =TRUE)) %>%
+  select(patid,eth5) %>% distinct() %>% filter(n()==1) %>% ungroup(patid)
 
 #For those with more than one equally most commonly recorded ethnicities, find the most recently recorded from these categories
-eth_most_recent <- ethnicity_all %>% anti_join(eth_most_common, by = "patid") %>% group_by(patid, eth5, eth16) %>% summarise(n = n()) %>% ungroup() %>%
-  group_by(patid) %>% filter(n == max(n, na.rm =TRUE)) %>% left_join(ethnicity_all) %>% filter(obsdate == max(obsdate)) %>% select(patid,eth16, eth5) %>% filter(n()==1) %>% ungroup(patid)
+eth_most_recent <- ethnicity_all %>% anti_join(eth_most_common, by = "patid") %>% group_by(patid, eth5) %>% summarise(n = n()) %>% ungroup() %>%
+  group_by(patid) %>% filter(n == max(n, na.rm =TRUE)) %>% left_join(ethnicity_all) %>% filter(obsdate == max(obsdate)) %>% select(patid, eth5) %>% filter(n()==1) %>% ungroup(patid)
 
 #Pull together
-ethnicity <- eth_most_common %>% union(eth_most_recent) %>% analysis$cached("all_ethnicity", unique_indexes= "patid")
+ethnicity <- eth_most_common %>% union(eth_most_recent) %>% analysis$cached("all_ethnicity_5cat", unique_indexes= "patid")
 
 
 ##Adding in HES ethnicity
@@ -522,7 +535,7 @@ other_medications <- other_medications %>% analysis$cached(paste0(cohort.name,"_
 ###Pull together all variables##################################################
 active_cohort_all <- active_cohort %>% 
   left_join(deprivation) %>% mutate(imd_quintile= ifelse(is.na(imd_quintile), "Missing IMD", imd_quintile)) %>%
-  left_join(ethnicity) %>% mutate(eth16 = ifelse(is.na(eth16), "17", eth16), eth5 = ifelse(is.na(eth5), "5", eth5)) %>% rename(eth5_gp = eth5, eth16_gp = eth16) %>%
+  left_join(ethnicity) %>% mutate(eth5 = ifelse(is.na(eth5), "5", eth5)) %>% rename(eth5_gp = eth5) %>%
   left_join(hes_ethnicity) %>% mutate(eth5 = ifelse(eth5_gp == "5", hes_eth5_cat, eth5_gp)) %>% select(-hes_eth5_cat) %>% mutate(eth5 = ifelse(is.na(eth5), "5", eth5)) %>%
   left_join(smoking) %>% mutate(smoking_status = ifelse(is.na(smoking_status), "Unknown smoking", smoking_status)) %>%
   left_join(alcohol) %>% mutate(alcohol_consumption = ifelse(is.na(alcohol_consumption), "Unknown alcohol", alcohol_consumption)) %>%
