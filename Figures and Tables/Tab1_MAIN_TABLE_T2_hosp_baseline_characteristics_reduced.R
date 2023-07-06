@@ -6,7 +6,6 @@
 
 #Load packages
 library(tidyverse)
-library(lubridate)
 library(tableone)
 library(kableExtra)
 
@@ -16,8 +15,6 @@ library(aurum)
 ###Connecting to data and setting up analysis###################################
 #Initialise connection
 cprd = CPRDData$new(cprdEnv = "test-remote",cprdConf = "C:/Users/rh530/.aurum.yaml")
-codesets = cprd$codesets()
-codes = codesets$getAllCodeSetVersion(v = "31/10/2021")
 
 #Setting up/loading analysis test
 analysis = cprd$analysis("Rhian_covid")

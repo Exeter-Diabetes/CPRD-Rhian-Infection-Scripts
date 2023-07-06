@@ -6,8 +6,6 @@
 
 #Load packages
 library(tidyverse)
-library(lubridate)
-library(survminer)
 library(survival)
 library(forestplot)
 
@@ -81,6 +79,7 @@ pneumovacc_2_ever <- pneumovacc_raw_2 %>% filter(!is.na(issuedate)) %>% inner_jo
 
 pneumovacc <- collect(pneumovacc_1_ever %>% union(pneumovacc_2_ever))
 
+#Join with cohort
 cohort <- cohort %>% left_join(pneumovacc, by = "patid") %>% mutate(pneumovacc_ever = ifelse(is.na(pneumovacc_ever), 0 , pneumovacc_ever))
 cohort %>% filter(pneumovacc_ever ==1) %>% count()
 cohort %>% filter(pneumovacc_ever ==0) %>% count()

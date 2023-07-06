@@ -6,21 +6,17 @@
 
 #Load packages
 library(tidyverse)
-library(lubridate)
-library(survminer)
 library(survival)
 library(forestplot)
 
 #Load aurum package
 library(aurum)
 
-###Connecting to data and setting up analysis###################################
+###Connecting to data and setting up/connecting to analysis#####################
 #Initialise connection
 cprd = CPRDData$new(cprdEnv = "test-remote",cprdConf = "C:/Users/rh530/.aurum.yaml")
-codesets = cprd$codesets()
-codes = codesets$getAllCodeSetVersion(v = "31/10/2021")
 
-#Setting up/loading analysis test
+#Connect to analysis
 analysis = cprd$analysis("Rhian_covid")
 
 

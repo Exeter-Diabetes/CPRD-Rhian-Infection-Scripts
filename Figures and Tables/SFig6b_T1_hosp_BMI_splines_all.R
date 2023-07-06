@@ -6,23 +6,19 @@
 
 #Load packages
 library(tidyverse)
-library(lubridate)
-library(survminer)
 library(survival)
-library(patchwork)
 library(rms)
+library(patchwork)
 library(cowplot)
 
 #Load aurum package
 library(aurum)
 
-###Connecting to data and setting up analysis###################################
+###Connecting to data and setting up/connecting to analysis#####################
 #Initialise connection
 cprd = CPRDData$new(cprdEnv = "test-remote",cprdConf = "C:/Users/rh530/.aurum.yaml")
-codesets = cprd$codesets()
-codes = codesets$getAllCodeSetVersion(v = "31/10/2021")
 
-#Setting up/loading analysis test
+#Connect to analysis
 analysis = cprd$analysis("Rhian_covid")
 
 
@@ -63,6 +59,7 @@ cohort <- cohort %>% filter(regstartdate <= index.date.minus1y)
 
 #Exclude people with diabetes diagnosed during study
 cohort <- cohort %>% filter(dm_diag_date_all <= index.date)
+
 
 #Edit age groups
 cohort <- cohort %>% mutate(age_cat = ifelse(age_at_index<18, "<18", ifelse(age_at_index <40 & age_at_index>=18, "18-39", ifelse(age_at_index<50 & age_at_index>=40, "40-49", ifelse(age_at_index<60 & age_at_index>=50, "50-59", ifelse(age_at_index<70 & age_at_index>=60, "60-69", ifelse(age_at_index<80 & age_at_index>=70, "70-79", ifelse(age_at_index>=80, "80+", NA))))))))
@@ -106,7 +103,7 @@ model <- cph(Surv(survival_time,outcome) ~ rcs(bmi_value,5) + gender + age_cat +
 predict <- Predict(model, bmi_value = seq(18,50, by =1), ref.zero=TRUE, fun = exp)
 predict_df <- as.data.frame(predict)
 
-#Set values for 95%CI outside range to limit values
+#Set values for 95%CI outside plot range to limit values
 predict_df <- predict_df %>% mutate(lower = ifelse(lower<0.5, 0.5, ifelse(lower>4,4, lower)), upper = ifelse(upper<0.5, 0.5, ifelse(upper>4,4, upper)))
 
 #Plot
@@ -187,6 +184,7 @@ cohort <- cohort %>% filter(regstartdate <= index.date.minus1y)
 #Exclude people with diabetes diagnosed during study
 cohort <- cohort %>% filter(dm_diag_date_all <= index.date)
 
+
 #Edit age groups
 cohort <- cohort %>% mutate(age_cat = ifelse(age_at_index<18, "<18", ifelse(age_at_index <40 & age_at_index>=18, "18-39", ifelse(age_at_index<50 & age_at_index>=40, "40-49", ifelse(age_at_index<60 & age_at_index>=50, "50-59", ifelse(age_at_index<70 & age_at_index>=60, "60-69", ifelse(age_at_index<80 & age_at_index>=70, "70-79", ifelse(age_at_index>=80, "80+", NA))))))))
 #And duration
@@ -229,7 +227,7 @@ model <- cph(Surv(survival_time,outcome) ~ rcs(bmi_value,3) + gender + age_cat +
 predict <- Predict(model, bmi_value = seq(18,50, by =1), ref.zero=TRUE, fun = exp)
 predict_df <- as.data.frame(predict)
 
-#Set values for 95%CI outside range to limit values
+#Set values for 95%CI outside plot range to limit values
 predict_df <- predict_df %>% mutate(lower = ifelse(lower<0.5, 0.5, ifelse(lower>4,4, lower)), upper = ifelse(upper<0.5, 0.5, ifelse(upper>4,4, upper)))
 
 #Plot
@@ -309,6 +307,7 @@ cohort <- cohort %>% filter(regstartdate <= index.date.minus1y)
 #Exclude people with diabetes diagnosed during study
 cohort <- cohort %>% filter(dm_diag_date_all <= index.date)
 
+
 #Edit age groups
 cohort <- cohort %>% mutate(age_cat = ifelse(age_at_index<18, "<18", ifelse(age_at_index <40 & age_at_index>=18, "18-39", ifelse(age_at_index<50 & age_at_index>=40, "40-49", ifelse(age_at_index<60 & age_at_index>=50, "50-59", ifelse(age_at_index<70 & age_at_index>=60, "60-69", ifelse(age_at_index<80 & age_at_index>=70, "70-79", ifelse(age_at_index>=80, "80+", NA))))))))
 #And duration
@@ -351,7 +350,7 @@ model <- cph(Surv(survival_time,outcome) ~ rcs(bmi_value,5) + gender + age_cat +
 predict <- Predict(model, bmi_value = seq(18,50, by =1), ref.zero=TRUE, fun = exp)
 predict_df <- as.data.frame(predict)
 
-#Set values for 95%CI outside range to limit values
+#Set values for 95%CI outside plot range to limit values
 predict_df <- predict_df %>% mutate(lower = ifelse(lower<0.5, 0.5, ifelse(lower>4,4, lower)), upper = ifelse(upper<0.5, 0.5, ifelse(upper>4,4, upper)))
 
 #Plot
@@ -393,11 +392,10 @@ plot <- plot_grid(plot, density, ncol = 1,align = "v", axis = "lr",
 pneumo_plot <- plot
 
 ################################################################################
+#Combine plots
 all_plot <- covid_plot + flu_plot + pneumo_plot
-################################################################################
 
-
-#Plot next to each other and save
+#Save
 pdf.options(reset = TRUE, onefile = TRUE)
 pdf("SFig6b_T1_hosp_BMI_splines_all.pdf",width=16,height=6)
 all_plot

@@ -6,23 +6,19 @@
 
 #Load packages
 library(tidyverse)
-library(lubridate)
-library(survminer)
 library(survival)
-library(patchwork)
 library(rms)
+library(patchwork)
 library(cowplot)
 
 #Load aurum package
 library(aurum)
 
-###Connecting to data and setting up analysis###################################
+###Connecting to data and setting up/connecting to analysis#####################
 #Initialise connection
 cprd = CPRDData$new(cprdEnv = "test-remote",cprdConf = "C:/Users/rh530/.aurum.yaml")
-codesets = cprd$codesets()
-codes = codesets$getAllCodeSetVersion(v = "31/10/2021")
 
-#Setting up/loading analysis test
+#Connect to analysis
 analysis = cprd$analysis("Rhian_covid")
 
 
@@ -63,6 +59,7 @@ cohort <- cohort %>% filter(regstartdate <= index.date.minus1y)
 
 #Exclude people with diabetes diagnosed during study
 cohort <- cohort %>% filter(dm_diag_date_all <= index.date)
+
 
 #Setting variables to factors and setting reference category
 #Gender
@@ -197,14 +194,14 @@ levels(cohort$ltras_6m) <- c("No", "Yes")
 
 
 ################################################################################
-#Set subgroup
+#Set subgroups
 subgroup1 <- "White"
 subgroup2 <- "South Asian"
 subgroup3 <- "Black"
 cohort <- cohort %>% mutate(subgroup = eth5)
 ################################################################################
 
-##Set reference to 30 for subgroup and then plot interaction model for each subgroup
+##Set reference to 30 for subgroup and then run model with interaction for each subgroup
 dd <- datadist(cohort %>% filter(subgroup=="White") %>% select(!cysticfibrosis_diag_date))
 options(datadist="dd")
 dd$limits["Adjust to","bmi_value"] <- 30
@@ -219,6 +216,7 @@ anova(model_1)
 predict_1 <- Predict(model_1, bmi_value = seq(18,50, by =1), subgroup ="White", ref.zero=TRUE, fun = exp)
 predict_1_df <- as.data.frame(predict_1) %>% mutate(subgroup = paste0(subgroup1))
 
+#Repeat for other subgroups
 dd <- datadist(cohort %>% filter(subgroup=="South Asian") %>% select(!cysticfibrosis_diag_date))
 options(datadist="dd")
 dd$limits["Adjust to","bmi_value"] <- 30
@@ -233,6 +231,7 @@ anova(model_2)
 predict_2 <- Predict(model_2, bmi_value = seq(18,50, by =1), subgroup ="South Asian", ref.zero=TRUE, fun = exp)
 predict_2_df <- as.data.frame(predict_2) %>% mutate(subgroup = paste0(subgroup2))
 
+#Repeat for other subgroups
 dd <- datadist(cohort %>% filter(subgroup=="Black") %>% select(!cysticfibrosis_diag_date))
 options(datadist="dd")
 dd$limits["Adjust to","bmi_value"] <- 30
@@ -250,7 +249,7 @@ predict_3_df <- as.data.frame(predict_3) %>% mutate(subgroup = paste0(subgroup3)
 #Combine
 subgroup_df <- predict_1_df %>% rbind(predict_2_df) %>% rbind(predict_3_df)
 
-#Set values for 95%CI outside range to limit values
+#Set values for 95%CI outside plot range to limit values
 subgroup_df <- subgroup_df %>% mutate(lower = ifelse(lower<0.5, 0.5, ifelse(lower>3,3, lower)), upper = ifelse(upper<0.5, 0.5, ifelse(upper>3,3, upper)))
 
 #Plot
@@ -270,6 +269,7 @@ plot<- ggplot(data=subgroup_df,aes(x=bmi_value, y=yhat, group = subgroup)) +
         panel.background = element_blank()) +
   theme(legend.title = element_blank(), legend.text = element_text(size=10), legend.position = c(0.2,0.85), legend.background = element_blank())
 
+#Paste subgroup names
 cohort <- cohort %>% mutate(subgroup = ifelse(subgroup == "White", "White", ifelse(subgroup == "Black", "Black", ifelse(subgroup == "South Asian", "South Asian", NA))))
 
 
@@ -336,6 +336,7 @@ cohort <- cohort %>% filter(regstartdate <= index.date.minus1y)
 #Exclude people with diabetes diagnosed during study
 cohort <- cohort %>% filter(dm_diag_date_all <= index.date)
 
+
 #Setting variables to factors and setting reference category
 #Gender
 cohort$gender <- factor(cohort$gender)
@@ -469,14 +470,14 @@ levels(cohort$ltras_6m) <- c("No", "Yes")
 
 
 ################################################################################
-#Set subgroup
+#Set subgroups
 subgroup1 <- "White"
 subgroup2 <- "South Asian"
 subgroup3 <- "Black"
 cohort <- cohort %>% mutate(subgroup = eth5)
 ################################################################################
 
-##Set reference to 30 for subgroup and then plot interaction model for each subgroup
+##Set reference to 30 for subgroup and then run model with interaction for each subgroup
 dd <- datadist(cohort %>% filter(subgroup=="White") %>% select(!cysticfibrosis_diag_date))
 options(datadist="dd")
 dd$limits["Adjust to","bmi_value"] <- 30
@@ -491,6 +492,7 @@ anova(model_1)
 predict_1 <- Predict(model_1, bmi_value = seq(18,50, by =1), subgroup ="White", ref.zero=TRUE, fun = exp)
 predict_1_df <- as.data.frame(predict_1) %>% mutate(subgroup = paste0(subgroup1))
 
+#Repeat for other subgroups
 dd <- datadist(cohort %>% filter(subgroup=="South Asian") %>% select(!cysticfibrosis_diag_date))
 options(datadist="dd")
 dd$limits["Adjust to","bmi_value"] <- 30
@@ -505,6 +507,7 @@ anova(model_2)
 predict_2 <- Predict(model_2, bmi_value = seq(18,50, by =1), subgroup ="South Asian", ref.zero=TRUE, fun = exp)
 predict_2_df <- as.data.frame(predict_2) %>% mutate(subgroup = paste0(subgroup2))
 
+#Repeat for other subgroups
 dd <- datadist(cohort %>% filter(subgroup=="Black") %>% select(!cysticfibrosis_diag_date))
 options(datadist="dd")
 dd$limits["Adjust to","bmi_value"] <- 30
@@ -522,7 +525,7 @@ predict_3_df <- as.data.frame(predict_3) %>% mutate(subgroup = paste0(subgroup3)
 #Combine
 subgroup_df <- predict_1_df %>% rbind(predict_2_df) %>% rbind(predict_3_df)
 
-#Set values for 95%CI outside range to limit values
+#Set values for 95%CI outside plot range to limit values
 subgroup_df <- subgroup_df %>% mutate(lower = ifelse(lower<0.5, 0.5, ifelse(lower>3,3, lower)), upper = ifelse(upper<0.5, 0.5, ifelse(upper>3,3, upper)))
 
 #Plot
@@ -542,6 +545,7 @@ plot<- ggplot(data=subgroup_df,aes(x=bmi_value, y=yhat, group = subgroup)) +
         panel.background = element_blank()) +
   theme(legend.title = element_blank(), legend.text = element_text(size=10), legend.position = c(0.2,0.85), legend.background = element_blank())
 
+#Paste subgroup names
 cohort <- cohort %>% mutate(subgroup = ifelse(subgroup == "White", "White", ifelse(subgroup == "Black", "Black", ifelse(subgroup == "South Asian", "South Asian", NA))))
 
 
@@ -606,6 +610,7 @@ cohort <- cohort %>% filter(regstartdate <= index.date.minus1y)
 #Exclude people with diabetes diagnosed during study
 cohort <- cohort %>% filter(dm_diag_date_all <= index.date)
 
+
 #Setting variables to factors and setting reference category
 #Gender
 cohort$gender <- factor(cohort$gender)
@@ -739,14 +744,14 @@ levels(cohort$ltras_6m) <- c("No", "Yes")
 
 
 ################################################################################
-#Set subgroup
+#Set subgroups
 subgroup1 <- "White"
 subgroup2 <- "South Asian"
 subgroup3 <- "Black"
 cohort <- cohort %>% mutate(subgroup = eth5)
 ################################################################################
 
-##Set reference to 30 for subgroup and then plot interaction model for each subgroup
+##Set reference to 30 for subgroup and then run model with interaction for each subgroup
 dd <- datadist(cohort %>% filter(subgroup=="White") %>% select(!cysticfibrosis_diag_date))
 options(datadist="dd")
 dd$limits["Adjust to","bmi_value"] <- 30
@@ -761,6 +766,7 @@ anova(model_1)
 predict_1 <- Predict(model_1, bmi_value = seq(18,50, by =1), subgroup ="White", ref.zero=TRUE, fun = exp)
 predict_1_df <- as.data.frame(predict_1) %>% mutate(subgroup = paste0(subgroup1))
 
+#Repeat for other subgroups
 dd <- datadist(cohort %>% filter(subgroup=="South Asian") %>% select(!cysticfibrosis_diag_date))
 options(datadist="dd")
 dd$limits["Adjust to","bmi_value"] <- 30
@@ -775,6 +781,7 @@ anova(model_2)
 predict_2 <- Predict(model_2, bmi_value = seq(18,50, by =1), subgroup ="South Asian", ref.zero=TRUE, fun = exp)
 predict_2_df <- as.data.frame(predict_2) %>% mutate(subgroup = paste0(subgroup2))
 
+#Repeat for other subgroups
 dd <- datadist(cohort %>% filter(subgroup=="Black") %>% select(!cysticfibrosis_diag_date))
 options(datadist="dd")
 dd$limits["Adjust to","bmi_value"] <- 30
@@ -792,7 +799,7 @@ predict_3_df <- as.data.frame(predict_3) %>% mutate(subgroup = paste0(subgroup3)
 #Combine
 subgroup_df <- predict_1_df %>% rbind(predict_2_df) %>% rbind(predict_3_df)
 
-#Set values for 95%CI outside range to limit values
+#Set values for 95%CI outside plot range to limit values
 subgroup_df <- subgroup_df %>% mutate(lower = ifelse(lower<0.5, 0.5, ifelse(lower>3,3, lower)), upper = ifelse(upper<0.5, 0.5, ifelse(upper>3,3, upper)))
 
 #Plot
@@ -812,6 +819,7 @@ plot<- ggplot(data=subgroup_df,aes(x=bmi_value, y=yhat, group = subgroup)) +
         panel.background = element_blank()) +
   theme(legend.title = element_blank(), legend.text = element_text(size=10), legend.position = c(0.2,0.85), legend.background = element_blank())
 
+#Paste subgroup names
 cohort <- cohort %>% mutate(subgroup = ifelse(subgroup == "White", "White", ifelse(subgroup == "Black", "Black", ifelse(subgroup == "South Asian", "South Asian", NA))))
 
 
@@ -839,10 +847,10 @@ pneumo_eth_plot <- plot
 pneumo_eth_plot
 
 ################################################################################
+#Combine all plots
 ethnicity_plot <- covid_eth_plot + flu_eth_plot + pneumo_eth_plot
-################################################################################
 
-#Plot next to each other and save
+#Save
 pdf.options(reset = TRUE, onefile = TRUE)
 pdf("SFig3b_T2_hosp_BMI_splines_ethnicity.pdf",width=16,height=6)
 ethnicity_plot

@@ -6,8 +6,6 @@
 
 #Load packages
 library(tidyverse)
-library(lubridate)
-library(survminer)
 library(survival)
 library(kableExtra)
 
@@ -38,8 +36,7 @@ end.date = as.Date("2020-10-31")
 #Load cohort
 cohort <- cohort %>% analysis$cached(paste0(cohort.name,"_cohort_all"), unique_indexes = "patid")
 
-###HOSPITALISATION##############################################################
-###Outcome: hospitalisation, any diagnoses in HES (excluding elective admissions: admimeth = 11/12/13)
+###Hospitalisation, any diagnoses in HES (excluding elective admissions: admimeth = 11/12/13)
 hospitalisations <- cohort %>% select(patid) %>% left_join(cprd$tables$hesDiagnosisHosp) %>% filter(admidate >= index.date & admidate <= end.date) %>%
   inner_join(codes[[paste0("icd10_",infection)]], by=c("ICD"="icd10")) %>% left_join(cprd$tables$hesHospital) %>% filter(admimeth != "11" & admimeth != "12" & admimeth != "13") %>%
   mutate(same_day_discharge = ifelse(duration ==0, 1, 0)) %>% analysis$cached(paste0(cohort.name, "_", infection, "_hosps"), indexes = c("patid", "admidate"))
@@ -79,6 +76,7 @@ cohort <- cohort %>% filter(regstartdate <= index.date.minus1y)
 #Exclude people with diabetes diagnosed during study
 cohort <- cohort %>% filter(dm_diag_date_all <= index.date)
 
+################################################################################
 ##Table of code frequencies
 cohort_outcome_codes <- cohort %>% filter(outcome ==1) %>% select(patid, outcome_date) %>% rename(admidate = outcome_date) %>% left_join(hospitalisations)
 tab_covid_code_freq <- cohort_outcome_codes %>% select(patid, admidate, ICD) %>% distinct() %>% group_by(ICD) %>% summarise(freq = n()) %>% arrange(desc(freq))
@@ -106,8 +104,7 @@ end.date = as.Date("2019-05-31")
 #Load cohort
 cohort <- cohort %>% analysis$cached(paste0(cohort.name,"_cohort_all"), unique_indexes = "patid")
 
-###HOSPITALISATION##############################################################
-###Outcome: hospitalisation, any diagnoses in HES (excluding elective admissions: admimeth = 11/12/13)
+###Hospitalisation, any diagnoses in HES (excluding elective admissions: admimeth = 11/12/13)
 hospitalisations <- cohort %>% select(patid) %>% left_join(cprd$tables$hesDiagnosisHosp) %>% filter(admidate >= index.date & admidate <= end.date) %>%
   inner_join(codes[[paste0("icd10_",infection)]], by=c("ICD"="icd10")) %>% left_join(cprd$tables$hesHospital) %>% filter(admimeth != "11" & admimeth != "12" & admimeth != "13") %>%
   mutate(same_day_discharge = ifelse(duration ==0, 1, 0)) %>% analysis$cached(paste0(cohort.name, "_", infection, "_hosps"), indexes = c("patid", "admidate"))
@@ -146,6 +143,7 @@ cohort <- cohort %>% filter(regstartdate <= index.date.minus1y)
 #Exclude people with diabetes diagnosed during study
 cohort <- cohort %>% filter(dm_diag_date_all <= index.date)
 
+################################################################################
 ##Table of code frequencies
 cohort_outcome_codes <- cohort %>% filter(outcome ==1) %>% select(patid, outcome_date) %>% rename(admidate = outcome_date) %>% left_join(hospitalisations)
 tab_flu_code_freq <- cohort_outcome_codes %>% select(patid, admidate, ICD) %>% distinct() %>% group_by(ICD) %>% summarise(freq = n()) %>% arrange(desc(freq))
@@ -173,8 +171,7 @@ end.date = as.Date("2019-05-31")
 #Load cohort
 cohort <- cohort %>% analysis$cached(paste0(cohort.name,"_cohort_all"), unique_indexes = "patid")
 
-###HOSPITALISATION##############################################################
-###Outcome: hospitalisation, any diagnoses in HES (excluding elective admissions: admimeth = 11/12/13)
+###Hospitalisation, any diagnoses in HES (excluding elective admissions: admimeth = 11/12/13)
 hospitalisations <- cohort %>% select(patid) %>% left_join(cprd$tables$hesDiagnosisHosp) %>% filter(admidate >= index.date & admidate <= end.date) %>%
   inner_join(codes[[paste0("icd10_",infection)]], by=c("ICD"="icd10")) %>% left_join(cprd$tables$hesHospital) %>% filter(admimeth != "11" & admimeth != "12" & admimeth != "13") %>%
   mutate(same_day_discharge = ifelse(duration ==0, 1, 0)) %>% analysis$cached(paste0(cohort.name, "_", infection, "_hosps"), indexes = c("patid", "admidate"))
@@ -213,6 +210,7 @@ cohort <- cohort %>% filter(regstartdate <= index.date.minus1y)
 #Exclude people with diabetes diagnosed during study
 cohort <- cohort %>% filter(dm_diag_date_all <= index.date)
 
+################################################################################
 ##Table of code frequencies
 cohort_outcome_codes <- cohort %>% filter(outcome ==1) %>% select(patid, outcome_date) %>% rename(admidate = outcome_date) %>% left_join(hospitalisations)
 tab_pneumo_code_freq <- cohort_outcome_codes %>% select(patid, admidate, ICD) %>% distinct() %>% group_by(ICD) %>% summarise(freq = n()) %>% arrange(desc(freq))

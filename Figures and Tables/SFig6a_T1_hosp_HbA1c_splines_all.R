@@ -6,23 +6,19 @@
 
 #Load packages
 library(tidyverse)
-library(lubridate)
-library(survminer)
 library(survival)
-library(patchwork)
 library(rms)
+library(patchwork)
 library(cowplot)
 
 #Load aurum package
 library(aurum)
 
-###Connecting to data and setting up analysis###################################
+###Connecting to data and setting up/connecting to analysis#####################
 #Initialise connection
 cprd = CPRDData$new(cprdEnv = "test-remote",cprdConf = "C:/Users/rh530/.aurum.yaml")
-codesets = cprd$codesets()
-codes = codesets$getAllCodeSetVersion(v = "31/10/2021")
 
-#Setting up/loading analysis test
+#Connect to analysis
 analysis = cprd$analysis("Rhian_covid")
 
 
@@ -64,6 +60,7 @@ cohort <- cohort %>% filter(regstartdate <= index.date.minus1y)
 #Exclude people with diabetes diagnosed during study
 cohort <- cohort %>% filter(dm_diag_date_all <= index.date)
 
+
 #Edit age groups
 cohort <- cohort %>% mutate(age_cat = ifelse(age_at_index<18, "<18", ifelse(age_at_index <40 & age_at_index>=18, "18-39", ifelse(age_at_index<50 & age_at_index>=40, "40-49", ifelse(age_at_index<60 & age_at_index>=50, "50-59", ifelse(age_at_index<70 & age_at_index>=60, "60-69", ifelse(age_at_index<80 & age_at_index>=70, "70-79", ifelse(age_at_index>=80, "80+", NA))))))))
 #And duration
@@ -97,7 +94,7 @@ cohort$bmi_cat <- relevel(cohort$bmi_cat, ref = "25-29.9")
 
 ################################################################################
 
-##Set reference to 66 for subgroup and then plot interaction model for each subgroup
+##Set reference to 66 and run model for all
 dd <- datadist(cohort %>% select(!cysticfibrosis_diag_date))
 options(datadist="dd")
 dd$limits["Adjust to","hba1c_value"] <- 66
@@ -105,7 +102,7 @@ model <- cph(Surv(survival_time,outcome) ~ rcs(hba1c_value,5) + gender + age_cat
 predict <- Predict(model, hba1c_value = seq(30,120, by =1), ref.zero=TRUE, fun = exp)
 predict_df <- as.data.frame(predict)
 
-#Set values for 95%CI outside range to limit values
+#Set values for 95%CI outside plot range to limit values
 predict_df <- predict_df %>% mutate(lower = ifelse(lower>6,6, lower), upper = ifelse(upper>6,6, upper))
 
 #Plot
@@ -186,6 +183,7 @@ cohort <- cohort %>% filter(regstartdate <= index.date.minus1y)
 #Exclude people with diabetes diagnosed during study
 cohort <- cohort %>% filter(dm_diag_date_all <= index.date)
 
+
 #Edit age groups
 cohort <- cohort %>% mutate(age_cat = ifelse(age_at_index<18, "<18", ifelse(age_at_index <40 & age_at_index>=18, "18-39", ifelse(age_at_index<50 & age_at_index>=40, "40-49", ifelse(age_at_index<60 & age_at_index>=50, "50-59", ifelse(age_at_index<70 & age_at_index>=60, "60-69", ifelse(age_at_index<80 & age_at_index>=70, "70-79", ifelse(age_at_index>=80, "80+", NA))))))))
 #And duration
@@ -220,7 +218,7 @@ cohort$bmi_cat <- relevel(cohort$bmi_cat, ref = "25-29.9")
 
 ################################################################################
 
-##Set reference to 66 for subgroup and then plot interaction model for each subgroup
+##Set reference to 66 and run model for all
 dd <- datadist(cohort %>% select(!cysticfibrosis_diag_date))
 options(datadist="dd")
 dd$limits["Adjust to","hba1c_value"] <- 66
@@ -228,7 +226,7 @@ model <- cph(Surv(survival_time,outcome) ~ rcs(hba1c_value,3) + gender + age_cat
 predict <- Predict(model, hba1c_value = seq(30,120, by =1), ref.zero=TRUE, fun = exp)
 predict_df <- as.data.frame(predict)
 
-#Set values for 95%CI outside range to limit values
+#Set values for 95%CI outside plot range to limit values
 predict_df <- predict_df %>% mutate(lower = ifelse(lower>6,6, lower), upper = ifelse(upper>6,6, upper))
 
 #Plot
@@ -308,6 +306,7 @@ cohort <- cohort %>% filter(regstartdate <= index.date.minus1y)
 #Exclude people with diabetes diagnosed during study
 cohort <- cohort %>% filter(dm_diag_date_all <= index.date)
 
+
 #Edit age groups
 cohort <- cohort %>% mutate(age_cat = ifelse(age_at_index<18, "<18", ifelse(age_at_index <40 & age_at_index>=18, "18-39", ifelse(age_at_index<50 & age_at_index>=40, "40-49", ifelse(age_at_index<60 & age_at_index>=50, "50-59", ifelse(age_at_index<70 & age_at_index>=60, "60-69", ifelse(age_at_index<80 & age_at_index>=70, "70-79", ifelse(age_at_index>=80, "80+", NA))))))))
 #And duration
@@ -342,7 +341,7 @@ cohort$bmi_cat <- relevel(cohort$bmi_cat, ref = "25-29.9")
 
 ################################################################################
 
-##Set reference to 66 for subgroup and then plot interaction model for each subgroup
+##Set reference to 66 and run model for all
 dd <- datadist(cohort %>% select(!cysticfibrosis_diag_date))
 options(datadist="dd")
 dd$limits["Adjust to","hba1c_value"] <- 66
@@ -350,7 +349,7 @@ model <- cph(Surv(survival_time,outcome) ~ rcs(hba1c_value,5) + gender + age_cat
 predict <- Predict(model, hba1c_value = seq(30,120, by =1), ref.zero=TRUE, fun = exp)
 predict_df <- as.data.frame(predict)
 
-#Set values for 95%CI outside range to limit values
+#Set values for 95%CI outside plot range to limit values
 predict_df <- predict_df %>% mutate(lower = ifelse(lower>6,6, lower), upper = ifelse(upper>6,6, upper))
 
 #Plot
@@ -369,7 +368,7 @@ plot<- ggplot(data=predict_df,aes(x=hba1c_value, y=yhat)) +
         panel.border = element_blank(), 
         panel.background = element_blank()) 
 
-#DEsnity line
+#Density line
 density <- ggplot(cohort, aes(x = hba1c_value)) +geom_density(position = "identity", size = 0.75) +
   scale_x_continuous(breaks = seq(30,120,10), limits = c(30,120)) +
   theme(legend.title = element_blank(), panel.background = element_blank(), legend.position = "none") +
@@ -392,11 +391,10 @@ plot <- plot_grid(plot, density, ncol = 1,align = "v", axis = "lr",
 pneumo_plot <- plot
 
 ################################################################################
+#Combine plots
 all_plot <- covid_plot + flu_plot + pneumo_plot
-################################################################################
 
-
-#Plot next to each other and save
+#Save
 pdf.options( reset = TRUE, onefile = TRUE)
 pdf("SFig6a_T1_hosp_HbA1c_splines_all.pdf",width=16,height=6)
 all_plot

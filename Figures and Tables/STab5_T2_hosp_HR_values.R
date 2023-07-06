@@ -6,10 +6,7 @@
 
 #Load packages
 library(tidyverse)
-library(lubridate)
-library(survminer)
 library(survival)
-library(forestplot)
 library(kableExtra)
 
 #Load aurum package
@@ -18,8 +15,6 @@ library(aurum)
 ###Connecting to data and setting up analysis###################################
 #Initialise connection
 cprd = CPRDData$new(cprdEnv = "test-remote",cprdConf = "C:/Users/rh530/.aurum.yaml")
-codesets = cprd$codesets()
-codes = codesets$getAllCodeSetVersion(v = "31/10/2021")
 
 #Setting up/loading analysis test
 analysis = cprd$analysis("Rhian_covid")
@@ -916,8 +911,6 @@ coefs <- coefs1 %>% left_join(coefs2, by = "row_name") %>% left_join(coefs3, by 
 #Tidy
 coefs <- coefs %>% mutate(row_name = ifelse(row_name == "Unknown ethnicity", "Unknown", ifelse(row_name == "Missing IMD", "Missing", ifelse(row_name == "Missing region", "Missing", ifelse(row_name == "0 complications", "0", ifelse(row_name == "1 complication", "1", ifelse(row_name == "2 complications", "2", ifelse(row_name == "3 complications", "3", ifelse(row_name == "Missing HbA1c", "Missing", ifelse(row_name == "Missing BMI", "Missing", ifelse(row_name == "Unknown smoking", "Unknown", ifelse(row_name == "Missing CKD", "Missing", ifelse(row_name == "Other comorbidities", "Other", ifelse(row_name == "Missing ACR", "Missing", row_name))))))))))))))
 
-
-#
 tab <- coefs %>% filter(!is.na(mean.x)) %>%
   mutate(hr_ci_covid = ifelse(is.na(p_value.x), "1 (ref)", paste0(round(mean.x,digits =2)," (",round(lower.x,digits=2),"-",round(upper.x,digits=2),")")), p_value_covid = ifelse(p_value.x <0.001, "<0.001", round(p_value.x, digits = 3))) %>%
   mutate(hr_ci_flu = ifelse(is.na(p_value.y), "1 (ref)", paste0(round(mean.y,digits =2)," (",round(lower.y,digits=2),"-",round(upper.y,digits=2),")")), p_value_flu = ifelse(p_value.y <0.001, "<0.001", round(p_value.y, digits = 3))) %>%

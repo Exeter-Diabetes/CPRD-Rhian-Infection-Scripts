@@ -10,19 +10,17 @@
 #library(devtools)
 #install_github("drkgyoung/Exeter_Diabetes_aurum_package")
 
-
-#Load tidyverse and lubridate
+#Load packages
 library(tidyverse)
-library(lubridate)
 
-#Load aurum package
+#Load aurum and biomarker packages
 library(aurum)
 library(EHRBiomarkr)
 
 ################################################################################
 ###SETUP########################################################################
 
-###Connecting to data and setting up analysis###################################
+###Connecting to data and analysis##############################################
 #Initialise connection
 cprd = CPRDData$new(cprdEnv = "test-remote",cprdConf = "C:/Users/rh530/.aurum.yaml")
 codesets = cprd$codesets()
@@ -64,7 +62,7 @@ ons_deathdate <- cprd$tables$onsDeath %>%
 active_cohort <- all_t1t2 %>%
   #Categorise diagnosis age
   mutate(diag_age_cat = ifelse(dm_diag_age_all<18, "0-17", ifelse(dm_diag_age_all<30 & dm_diag_age_all>=18, "18-29", ifelse(dm_diag_age_all<50 & dm_diag_age_all>=30, "30-49", ifelse(dm_diag_age_all<65 & dm_diag_age_all>=50, "50-64", ifelse(dm_diag_age_all<75 & dm_diag_age_all>=65, "65-74", ifelse(dm_diag_age_all>=75, "75+", NA))))))) %>%
-  #Join valid date lookup and filter people actively registered
+  #Join valid date lookup and patient table and filter people actively registered
   inner_join(cprd$tables$validDateLookup) %>% 
   filter(gp_ons_end_date>=index.date) %>% 
   inner_join(cprd$tables$patient) %>% 
@@ -91,6 +89,7 @@ deprivation <- cprd$tables$patientImd2015 %>%
   mutate(imd_quintile = ifelse(imd2015_10 == 1 | imd2015_10 == 2, "1", ifelse(imd2015_10 == 3 | imd2015_10 == 4, "2", ifelse(imd2015_10 == 5 | imd2015_10 == 6, "3", ifelse(imd2015_10 == 7 | imd2015_10 == 8, "4", ifelse(imd2015_10 == 9 | imd2015_10 == 10, "5", "Missing")))))) %>%
   select(patid, imd_quintile) %>%
   analysis$cached("all_deprivation", unique_indexes= "patid")
+
 
 ###Ethnicity####################################################################
 
@@ -143,6 +142,7 @@ smoking_next_recent <- smoking_all %>% anti_join(smoking_recent, by = "patid") %
 #Pull together
 smoking <- smoking_recent %>% union(smoking_next_recent) %>% analysis$cached(paste0(cohort.name,"_smoking"), unique_indexes = "patid")
 
+
 ###Alcohol consumption##########################################################
 alcohol_raw <- cprd$tables$observation %>% inner_join(codes$alcohol) %>% analysis$cached("all_alcohol_raw", indexes= c("patid", "obsdate", "alcohol_cat"))
 
@@ -176,7 +176,7 @@ for (i in starting_biomarkers) {
   print(tabledata %>% count())
 }
 
-###HbA1c
+###HbA1c - do seperately
 all_hba1c_raw <- cprd$tables$observation %>% inner_join(codes$hba1c) %>% analysis$cached("all_hba1c_raw",indexes=c("patid","obsdate","testvalue","numunitid"))
 ##Take raw table and clean dates, values, units, and take mean value if more than one observation on same date
 #Note: there is already an all_hba1c_cleaned table generated in setup so this should just be called
@@ -186,6 +186,7 @@ all_hba1c_cleaned <- all_hba1c_raw %>% filter(!is.na(obsdate)) %>% inner_join(cp
   clean_biomarker_units(numunitid, "hba1c") %>% clean_biomarker_values(testvalue, "hba1c") %>% group_by(patid,obsdate) %>% summarise(testvalue=mean(testvalue)) %>% ungroup() %>%
   select(patid, obsdate, testvalue) %>% distinct() %>% analysis$cached("all_hba1c_cleaned",indexes=c("patid","obsdate","testvalue"))
 
+#Clean biomarker tables (clean dates, values, units and take mean of observations on same date)
 for (i in starting_biomarkers) {
   print(i)
   raw_tablename <- paste0("all_",i,"_raw")
@@ -203,7 +204,7 @@ adult_height <- all_height_cleaned %>% inner_join(all_t1t2) %>% mutate(obs_age=d
 adult_weight <- all_weight_cleaned %>% inner_join(all_t1t2) %>% mutate(obs_age=datediff(obsdate,dob)/365.25) %>% filter(obs_age >=18) %>% select(patid, obsdate, testvalue) %>% analysis$cached("adult_weights",indexes=c("patid","obsdate","testvalue"))
 
 #Calculating median height (no median SQL median function so have to work out the long way, believe below should match what comes out of R function normally)
-#May give error, but creates table as should anyway?
+#May give error, but still creates table
 median_height <- adult_height %>% arrange(patid,testvalue) %>% group_by(patid) %>% add_count() %>% mutate(medianrow_down = floor((n+1)/2), medianrow_up = ceiling((n+1)/2), rownumber = row_number()) %>% 
   filter(rownumber == medianrow_down | rownumber == medianrow_up) %>% select(patid, testvalue) %>% summarise(median_height = mean(testvalue)) %>% analysis$cached("adult_median_height", unique_indexes = "patid", indexes= "median_height")
 
@@ -259,7 +260,7 @@ for (i in conditions) {
   print(tabledata %>% count())
 }
 
-#
+#Clean dates
 for (i in conditions) {
   print(i)
   raw_tablename <- paste0("all_",i,"_raw")
@@ -272,7 +273,7 @@ for (i in conditions) {
 ################################################################################
 ##HES comorbidities
 
-#
+#Join ICD10 codes to HES diagnosis table and cache raw table
 for (i in conditions) {
   if(length(codes[[paste0("icd10_",i)]]) > 0) {
   print(i)
@@ -284,7 +285,7 @@ for (i in conditions) {
   }
 }
 
-#
+#Clean dates
 for (i in conditions) {
   raw_tablename <- paste0("all_",i,"_HES")
   if(exists(raw_tablename)) {
@@ -299,7 +300,7 @@ for (i in conditions) {
 
 ##Same for procedures tables
 
-#
+#Join OPCS4 codes to HES procedures table and cache
 for (i in conditions) {
   if(length(codes[[paste0("opcs4_",i)]]) > 0) {
   print(i)
@@ -311,7 +312,7 @@ for (i in conditions) {
   }
 }
 
-#
+#Clean dates
 for (i in conditions) {
   raw_tablename <- paste0("all_",i,"_op")
   if(exists(raw_tablename)) {
@@ -324,7 +325,7 @@ for (i in conditions) {
 }
 
 ################################################################################
-###Combining
+###Combining diagnosis dates for each comorbidity
 for(i in conditions) {
   print(i)
   gp_tablename <- paste0("first_",i,"_gp")
@@ -345,7 +346,7 @@ for(i in conditions) {
   print(tabledata %>% count())
 }
 
-#
+#Combine all comorbidities into one table, identify where diagnosis date before index date
 cm <- active_cohort_patids
 
 for (i in conditions) {
@@ -426,6 +427,7 @@ ckd <- active_cohort_patids %>% left_join(ckd_at_index) %>% left_join(ckd_recent
   mutate(ckd_stage = ifelse(ckd_stage == 110, "Stage 1", ifelse(ckd_stage == 120, "Stage 2", ifelse(ckd_stage == 130, "Stage 3a", ifelse(ckd_stage == 135, "Stage 3b", ifelse(ckd_stage == 140, "Stage 4", ifelse(ckd_stage == 150, "Stage 5", NA))))))) %>%
   analysis$cached(paste0(cohort.name, "_ckd_stages"),unique_indexes="patid",indexes=c("ckd_stage","ckd_stage_onset"))
 
+
 ###ACR##########################################################################
 
 #Get raw urine albumin and creatinine and clean by removing missing test values, filtering to only most common/ correct units and cleaning dates
@@ -450,7 +452,9 @@ acr_with_calc <- all_acr_cleaned %>% rename(acr_code_value = testvalue) %>% unio
 acr <- active_cohort_patids %>% inner_join(acr_with_calc) %>% filter(acr_measure_date <= index.date) %>% group_by(patid) %>% filter(acr_measure_date == max(acr_measure_date,na.rm=TRUE)) %>%
   analysis$cached(paste0(cohort.name, "_acr"), unique_indexes = "patid")
 
+
 ###RECENT PREVIOUS RESPIRATORY INFECTION HOSPITALISATION########################
+#Find hospitalisations for respiratory infection (excluding same day discharge and elective admissions) in last 2 years
 two.years.earlier <- index.date - years(2)
 
 resp_infection_hosps <- cprd$tables$hesDiagnosisHosp %>% inner_join(codes$icd10_respiratoryinfection, sql_on="LHS.ICD LIKE CONCAT(icd10,'%')") %>% analysis$cached("all_resp_infect_hosp", indexes = c("patid", "admidate"))
@@ -466,11 +470,12 @@ recent_hosp_anything <- cprd$tables$hesDiagnosisHosp %>% anti_join(resp_infectio
   group_by(patid) %>% summarise(recent_hosp_date = max(admidate)) %>% ungroup() %>% mutate(recent_hosp_anything =1L) %>%
   analysis$cached(paste0(cohort.name,"_recent_hosp_anything"), unique_indexes = "patid")
 
+
 ################################################################################
 ###DIABETES MEDICATIONS#########################################################
 
 six.months.earlier <- index.date - months(6)
-##Insulin
+##Insulin (dates cleaned)
 #If ran setup then should just call this table
 insulin_cleaned <- cprd$tables$drugIssue %>% inner_join(codes$insulin) %>% inner_join(cprd$tables$validDateLookup) %>% filter(!is.na(issuedate)) %>% 
   filter(issuedate>=min_dob & issuedate<=gp_ons_end_date) %>% select(patid,issuedate,dosageid,quantity,quantunitid,duration) %>% 
@@ -479,7 +484,7 @@ insulin_cleaned <- cprd$tables$drugIssue %>% inner_join(codes$insulin) %>% inner
 insulin_6months <- active_cohort_patids %>% left_join(insulin_cleaned) %>% filter(issuedate >= six.months.earlier & issuedate<=index.date) %>% select(patid) %>% 
   mutate(insulin_6months =1L) %>% distinct() %>% analysis$cached(paste0(cohort.name,"_insulin_6m"),unique_indexes="patid")
 
-##OHAs
+##OHAs (dates cleaned)
 #Should call table from setup
 ohas_cleaned <- cprd$tables$drugIssue %>% inner_join(cprd$tables$ohaLookup) %>% inner_join(cprd$tables$validDateLookup) %>% filter(!is.na(issuedate)) %>% 
   filter(issuedate>=min_dob & issuedate<=gp_ons_end_date) %>% select(patid,issuedate,dosageid,quantity,quantunitid,duration,INS,TZD,SU,DPP4,MFN,GLP1,Glinide,Acarbose,SGLT2) %>% 
@@ -493,6 +498,7 @@ diabetes_medications <- active_cohort_patids %>% left_join(ohas_6months) %>% lef
   mutate(INS_6m = ifelse(is.na(INS_6m), 0L, INS_6m), TZD_6m = ifelse(is.na(TZD_6m), 0L, TZD_6m), SU_6m = ifelse(is.na(SU_6m), 0L, SU_6m), DPP4_6m = ifelse(is.na(DPP4_6m), 0L, DPP4_6m), MFN_6m = ifelse(is.na(MFN_6m), 0L, MFN_6m), GLP1_6m = ifelse(is.na(GLP1_6m), 0L, GLP1_6m), Glinide_6m = ifelse(is.na(Glinide_6m), 0L, Glinide_6m), Acarbose_6m = ifelse(is.na(Acarbose_6m), 0L, Acarbose_6m), SGLT2_6m = ifelse(is.na(SGLT2_6m), 0L, SGLT2_6m), OHA_6m = ifelse(is.na(OHA_6m),0L,OHA_6m)) %>% 
   mutate(treatment_6m = ifelse(INS_6m == 1, "Insulin", ifelse(OHA_6m ==1 & INS_6m ==0, "OHA only", ifelse(INS_6m ==0 & OHA_6m ==0, "No treatment", NA)))) %>%
   analysis$cached(paste0(cohort.name,"_diabetesmeds_6m"), unique_indexes = "patid")
+
 
 ################################################################################
 ###OTHER MEDICATIONS############################################################
@@ -529,6 +535,7 @@ for (i in medications) {
   other_medications <- other_medications %>% left_join(last_6months) %>% mutate(med_6m = ifelse(is.na(med_6m), 0L, med_6m)) %>% rename({{new_variablename}}:= med_6m)
 }
 other_medications <- other_medications %>% analysis$cached(paste0(cohort.name,"_other_medications"),unique_indexes="patid")
+
 
 ################################################################################
 ###PULL TOGETHER################################################################

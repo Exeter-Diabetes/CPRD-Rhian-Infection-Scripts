@@ -6,23 +6,19 @@
 
 #Load packages
 library(tidyverse)
-library(lubridate)
-library(survminer)
 library(survival)
-library(patchwork)
 library(rms)
+library(patchwork)
 library(cowplot)
 
 #Load aurum package
 library(aurum)
 
-###Connecting to data and setting up analysis###################################
+###Connecting to data and setting up/connecting to analysis#####################
 #Initialise connection
 cprd = CPRDData$new(cprdEnv = "test-remote",cprdConf = "C:/Users/rh530/.aurum.yaml")
-codesets = cprd$codesets()
-codes = codesets$getAllCodeSetVersion(v = "31/10/2021")
 
-#Setting up/loading analysis test
+#Connect to analysis
 analysis = cprd$analysis("Rhian_covid")
 
 
@@ -68,10 +64,6 @@ cohort <- cohort %>% filter(regstartdate <= index.date.minus1y)
 #Exclude people with diabetes diagnosed during study
 cohort <- cohort %>% filter(dm_diag_date_all <= index.date)
 
-#Code subgroups as binary variables
-cohort <- cohort %>% mutate(over70 = ifelse(age_at_index >=70, 1, 0), complications = ifelse(number_complications !=0 | ckd_stage == "Stage 3a" | ckd_stage == "Stage 3b" | ckd_stage == "Stage 4" | ckd_stage == "Stage 5", 1, 0),
-                            cvd = ifelse((preindex_heartfailure ==1 | preindex_myocardialinfarction ==1 | preindex_stroke ==1 | preindex_af ==1 | preindex_angina ==1 | preindex_ihd ==1 | preindex_pad ==1 | preindex_revasc ==1 | preindex_tia ==1), 1, 0),
-                            recent_resp_infection_hosp = ifelse(recent_hosp_resp_infect ==1, 1, 0), insulin = ifelse(INS_6m ==1, 1, 0))
 
 #Setting variables to factors and setting reference category
 #Gender
@@ -206,7 +198,7 @@ levels(cohort$ltras_6m) <- c("No", "Yes")
 
 ################################################################################
 
-##Set reference to 53 for subgroup and then plot interaction model for each subgroup
+##Set reference to 53 and run model for all
 dd <- datadist(cohort %>% select(!cysticfibrosis_diag_date))
 options(datadist="dd")
 dd$limits["Adjust to","hba1c_value"] <- 53
@@ -222,7 +214,7 @@ predict_df <- as.data.frame(predict)
 output_table <- predict_df %>% select(hba1c_value, yhat, lower, upper)
 write_csv(output_table, paste0("hba1c_overall_spline_values_", infection, ".csv"))
 
-#Set values for 95%CI outside range to limit values
+#Set values for 95%CI outside plot range to limit values
 predict_df <- predict_df %>% mutate(lower = ifelse(lower<0.5, 0.5, ifelse(lower>3,3, lower)), upper = ifelse(upper<0.5, 0.5, ifelse(upper>3,3, upper)))
 
 #Plot
@@ -283,7 +275,6 @@ index.date = as.Date("2016-09-01") #change these for different cohorts
 end.date = as.Date("2019-05-31")
 
 ###Calculate survival dates and times###########################################
-#Also censor for deregistration here as study period is over 2 years
 cohort <- cohort %>% mutate(survival_date = end.date) %>% mutate(survival_date = ifelse(outcome ==1 & outcome_date < survival_date, outcome_date, survival_date)) %>%
   mutate(survival_date = ifelse(!is.na(regenddate) & regenddate < survival_date, regenddate, survival_date)) %>% mutate(survival_date = ifelse(!is.na(dod) & dod < survival_date, dod, survival_date)) %>% 
   mutate(outcome = ifelse(outcome ==1 & outcome_date == survival_date, 1, 0)) %>% mutate(survival_time = datediff(survival_date, index.date)) %>% 
@@ -305,10 +296,6 @@ cohort <- cohort %>% filter(regstartdate <= index.date.minus1y)
 #Exclude people with diabetes diagnosed during study
 cohort <- cohort %>% filter(dm_diag_date_all <= index.date)
 
-#Code subgroups as binary variables
-cohort <- cohort %>% mutate(over70 = ifelse(age_at_index >=70, 1, 0), complications = ifelse(number_complications !=0 | ckd_stage == "Stage 3a" | ckd_stage == "Stage 3b" | ckd_stage == "Stage 4" | ckd_stage == "Stage 5", 1, 0),
-                            cvd = ifelse((preindex_heartfailure ==1 | preindex_myocardialinfarction ==1 | preindex_stroke ==1 | preindex_af ==1 | preindex_angina ==1 | preindex_ihd ==1 | preindex_pad ==1 | preindex_revasc ==1 | preindex_tia ==1), 1, 0),
-                            recent_resp_infection_hosp = ifelse(recent_hosp_resp_infect ==1, 1, 0), insulin = ifelse(INS_6m ==1, 1, 0))
 
 #Setting variables to factors and setting reference category
 #Gender
@@ -444,7 +431,7 @@ levels(cohort$ltras_6m) <- c("No", "Yes")
 
 ################################################################################
 
-##Set reference to 53 for subgroup and then plot interaction model for each subgroup
+##Set reference to 53 and run model for all
 dd <- datadist(cohort %>% select(!cysticfibrosis_diag_date))
 options(datadist="dd")
 dd$limits["Adjust to","hba1c_value"] <- 53
@@ -460,7 +447,7 @@ predict_df <- as.data.frame(predict)
 output_table <- predict_df %>% select(hba1c_value, yhat, lower, upper)
 write_csv(output_table, paste0("hba1c_overall_spline_values_", infection, ".csv"))
 
-#Set values for 95%CI outside range to limit values
+#Set values for 95%CI outside plot range to limit values
 predict_df <- predict_df %>% mutate(lower = ifelse(lower<0.5, 0.5, ifelse(lower>3,3, lower)), upper = ifelse(upper<0.5, 0.5, ifelse(upper>3,3, upper)))
 
 #Plot
@@ -543,10 +530,6 @@ cohort <- cohort %>% filter(regstartdate <= index.date.minus1y)
 #Exclude people with diabetes diagnosed during study
 cohort <- cohort %>% filter(dm_diag_date_all <= index.date)
 
-#Code subgroups as binary variables
-cohort <- cohort %>% mutate(over70 = ifelse(age_at_index >=70, 1, 0), complications = ifelse(number_complications !=0 | ckd_stage == "Stage 3a" | ckd_stage == "Stage 3b" | ckd_stage == "Stage 4" | ckd_stage == "Stage 5", 1, 0),
-                            cvd = ifelse((preindex_heartfailure ==1 | preindex_myocardialinfarction ==1 | preindex_stroke ==1 | preindex_af ==1 | preindex_angina ==1 | preindex_ihd ==1 | preindex_pad ==1 | preindex_revasc ==1 | preindex_tia ==1), 1, 0),
-                            recent_resp_infection_hosp = ifelse(recent_hosp_resp_infect ==1, 1, 0), insulin = ifelse(INS_6m ==1, 1, 0))
 
 #Setting variables to factors and setting reference category
 #Gender
@@ -682,7 +665,7 @@ levels(cohort$ltras_6m) <- c("No", "Yes")
 
 ################################################################################
 
-##Set reference to 53 for subgroup and then plot interaction model for each subgroup
+##Set reference to 53 and run model for all
 dd <- datadist(cohort %>% select(!cysticfibrosis_diag_date))
 options(datadist="dd")
 dd$limits["Adjust to","hba1c_value"] <- 53
@@ -698,7 +681,7 @@ predict_df <- as.data.frame(predict)
 output_table <- predict_df %>% select(hba1c_value, yhat, lower, upper)
 write_csv(output_table, paste0("hba1c_overall_spline_values_", infection, ".csv"))
 
-#Set values for 95%CI outside range to limit values
+#Set values for 95%CI outside plot range to limit values
 predict_df <- predict_df %>% mutate(lower = ifelse(lower<0.5, 0.5, ifelse(lower>3,3, lower)), upper = ifelse(upper<0.5, 0.5, ifelse(upper>3,3, upper)))
 
 #Plot
@@ -784,10 +767,8 @@ cohort <- cohort %>% filter(regstartdate <= index.date.minus1y)
 #Exclude people with diabetes diagnosed during study
 cohort <- cohort %>% filter(dm_diag_date_all <= index.date)
 
-#Code subgroups as binary variables
-cohort <- cohort %>% mutate(over70 = ifelse(age_at_index >=70, 1, 0), complications = ifelse(number_complications !=0 | ckd_stage == "Stage 3a" | ckd_stage == "Stage 3b" | ckd_stage == "Stage 4" | ckd_stage == "Stage 5", 1, 0),
-                            cvd = ifelse((preindex_heartfailure ==1 | preindex_myocardialinfarction ==1 | preindex_stroke ==1 | preindex_af ==1 | preindex_angina ==1 | preindex_ihd ==1 | preindex_pad ==1 | preindex_revasc ==1 | preindex_tia ==1), 1, 0),
-                            recent_resp_infection_hosp = ifelse(recent_hosp_resp_infect ==1, 1, 0), insulin = ifelse(INS_6m ==1, 1, 0))
+#Code subgroup as binary variables
+cohort <- cohort %>% mutate(over70 = ifelse(age_at_index >=70, 1, 0))
 
 #Setting variables to factors and setting reference category
 #Gender
@@ -927,7 +908,7 @@ subgroup0 <- "Under 70"
 cohort <- cohort %>% mutate(subgroup = over70)
 ################################################################################
 
-##Set reference to 53 for subgroup and then plot interaction model for each subgroup
+##Set reference to 53 for subgroup and then run model with interaction for each subgroup
 dd <- datadist(cohort %>% filter(subgroup==0) %>% select(!cysticfibrosis_diag_date))
 options(datadist="dd")
 dd$limits["Adjust to","hba1c_value"] <- 53
@@ -942,6 +923,7 @@ anova(model_0)
 predict_0 <- Predict(model_0, hba1c_value = seq(30,120, by =1), subgroup =0, ref.zero=TRUE, fun = exp)
 predict_0_df <- as.data.frame(predict_0) %>% mutate(subgroup = paste0(subgroup0))
 
+#Repeat for other subgroup
 dd <- datadist(cohort %>% filter(subgroup==1) %>% select(!cysticfibrosis_diag_date))
 options(datadist="dd")
 dd$limits["Adjust to","hba1c_value"] <- 53
@@ -952,7 +934,6 @@ model_1 <- cph(Surv(survival_time,outcome) ~ subgroup * rcs(hba1c_value,5) + gen
                  ckd_stage + acr_cat + treatment_6m + oralsteroids_6m + immunosuppressants_6m + labas_6m + ltras_6m, data = cohort, x= T, y=T)
 
 anova(model_1)
-#should be same as above
 
 predict_1 <- Predict(model_1, hba1c_value = seq(30,120, by =1), subgroup=1, ref.zero=TRUE, fun = exp)
 predict_1_df <- as.data.frame(predict_1) %>% mutate(subgroup = paste0(subgroup1))
@@ -960,7 +941,7 @@ predict_1_df <- as.data.frame(predict_1) %>% mutate(subgroup = paste0(subgroup1)
 #Combine
 subgroup_df <- predict_0_df %>% rbind(predict_1_df)
 
-#Set values for 95%CI outside range to limit values
+#Set values for 95%CI outside plot range to limit values
 subgroup_df <- subgroup_df %>% mutate(lower = ifelse(lower<0.5, 0.5, ifelse(lower>3,3, lower)), upper = ifelse(upper<0.5, 0.5, ifelse(upper>3,3, upper)))
 
 #Plot
@@ -980,6 +961,7 @@ plot<- ggplot(data=subgroup_df,aes(x=hba1c_value, y=yhat, group = subgroup)) +
         panel.background = element_blank()) +
   theme(legend.title = element_blank(), legend.text = element_text(size=10), legend.position = c(0.2,0.9), legend.background = element_blank())
 
+#Paste subgroup names
 cohort <- cohort %>% mutate(subgroup = ifelse(subgroup ==1, paste0(subgroup1), ifelse(subgroup ==0, paste0(subgroup0), NA)))
 
 
@@ -1024,7 +1006,6 @@ index.date = as.Date("2016-09-01") #change these for different cohorts
 end.date = as.Date("2019-05-31")
 
 ###Calculate survival dates and times###########################################
-#Also censor for deregistration here as study period is over 2 years
 cohort <- cohort %>% mutate(survival_date = end.date) %>% mutate(survival_date = ifelse(outcome ==1 & outcome_date < survival_date, outcome_date, survival_date)) %>%
   mutate(survival_date = ifelse(!is.na(regenddate) & regenddate < survival_date, regenddate, survival_date)) %>% mutate(survival_date = ifelse(!is.na(dod) & dod < survival_date, dod, survival_date)) %>% 
   mutate(outcome = ifelse(outcome ==1 & outcome_date == survival_date, 1, 0)) %>% mutate(survival_time = datediff(survival_date, index.date)) %>% 
@@ -1046,10 +1027,8 @@ cohort <- cohort %>% filter(regstartdate <= index.date.minus1y)
 #Exclude people with diabetes diagnosed during study
 cohort <- cohort %>% filter(dm_diag_date_all <= index.date)
 
-#Code subgroups as binary variables
-cohort <- cohort %>% mutate(over70 = ifelse(age_at_index >=70, 1, 0), complications = ifelse(number_complications !=0 | ckd_stage == "Stage 3a" | ckd_stage == "Stage 3b" | ckd_stage == "Stage 4" | ckd_stage == "Stage 5", 1, 0),
-                            cvd = ifelse((preindex_heartfailure ==1 | preindex_myocardialinfarction ==1 | preindex_stroke ==1 | preindex_af ==1 | preindex_angina ==1 | preindex_ihd ==1 | preindex_pad ==1 | preindex_revasc ==1 | preindex_tia ==1), 1, 0),
-                            recent_resp_infection_hosp = ifelse(recent_hosp_resp_infect ==1, 1, 0), insulin = ifelse(INS_6m ==1, 1, 0))
+#Code subgroup as binary variables
+cohort <- cohort %>% mutate(over70 = ifelse(age_at_index >=70, 1, 0))
 
 #Setting variables to factors and setting reference category
 #Gender
@@ -1190,7 +1169,7 @@ subgroup0 <- "Under 70"
 cohort <- cohort %>% mutate(subgroup = over70)
 ################################################################################
 
-##Set reference to 53 for subgroup and then plot interaction model for each subgroup
+##Set reference to 53 for subgroup and then run model with interaction for each subgroup
 dd <- datadist(cohort %>% filter(subgroup==0) %>% select(!cysticfibrosis_diag_date))
 options(datadist="dd")
 dd$limits["Adjust to","hba1c_value"] <- 53
@@ -1205,6 +1184,7 @@ anova(model_0)
 predict_0 <- Predict(model_0, hba1c_value = seq(30,120, by =1), subgroup =0, ref.zero=TRUE, fun = exp)
 predict_0_df <- as.data.frame(predict_0) %>% mutate(subgroup = paste0(subgroup0))
 
+#Repeat for other subgroup
 dd <- datadist(cohort %>% filter(subgroup==1) %>% select(!cysticfibrosis_diag_date))
 options(datadist="dd")
 dd$limits["Adjust to","hba1c_value"] <- 53
@@ -1215,7 +1195,6 @@ model_1 <- cph(Surv(survival_time,outcome) ~ subgroup * rcs(hba1c_value,3) + gen
                  ckd_stage + acr_cat + treatment_6m + oralsteroids_6m + immunosuppressants_6m + labas_6m + ltras_6m, data = cohort, x= T, y=T)
 
 anova(model_1)
-#should be same as above
 
 predict_1 <- Predict(model_1, hba1c_value = seq(30,120, by =1), subgroup=1, ref.zero=TRUE, fun = exp)
 predict_1_df <- as.data.frame(predict_1) %>% mutate(subgroup = paste0(subgroup1))
@@ -1223,7 +1202,7 @@ predict_1_df <- as.data.frame(predict_1) %>% mutate(subgroup = paste0(subgroup1)
 #Combine
 subgroup_df <- predict_0_df %>% rbind(predict_1_df)
 
-#Set values for 95%CI outside range to limit values
+#Set values for 95%CI outside plot range to limit values
 subgroup_df <- subgroup_df %>% mutate(lower = ifelse(lower<0.5, 0.5, ifelse(lower>3,3, lower)), upper = ifelse(upper<0.5, 0.5, ifelse(upper>3,3, upper)))
 
 #Plot
@@ -1243,6 +1222,7 @@ plot<- ggplot(data=subgroup_df,aes(x=hba1c_value, y=yhat, group = subgroup)) +
         panel.background = element_blank()) +
   theme(legend.title = element_blank(), legend.text = element_text(size=10), legend.position = c(0.2,0.9), legend.background = element_blank())
 
+#Paste subgroup names
 cohort <- cohort %>% mutate(subgroup = ifelse(subgroup ==1, paste0(subgroup1), ifelse(subgroup ==0, paste0(subgroup0), NA)))
 
 
@@ -1308,10 +1288,8 @@ cohort <- cohort %>% filter(regstartdate <= index.date.minus1y)
 #Exclude people with diabetes diagnosed during study
 cohort <- cohort %>% filter(dm_diag_date_all <= index.date)
 
-#Code subgroups as binary variables
-cohort <- cohort %>% mutate(over70 = ifelse(age_at_index >=70, 1, 0), complications = ifelse(number_complications !=0 | ckd_stage == "Stage 3a" | ckd_stage == "Stage 3b" | ckd_stage == "Stage 4" | ckd_stage == "Stage 5", 1, 0),
-                            cvd = ifelse((preindex_heartfailure ==1 | preindex_myocardialinfarction ==1 | preindex_stroke ==1 | preindex_af ==1 | preindex_angina ==1 | preindex_ihd ==1 | preindex_pad ==1 | preindex_revasc ==1 | preindex_tia ==1), 1, 0),
-                            recent_resp_infection_hosp = ifelse(recent_hosp_resp_infect ==1, 1, 0), insulin = ifelse(INS_6m ==1, 1, 0))
+#Code subgroup as binary variables
+cohort <- cohort %>% mutate(over70 = ifelse(age_at_index >=70, 1, 0))
 
 #Setting variables to factors and setting reference category
 #Gender
@@ -1452,7 +1430,7 @@ subgroup0 <- "Under 70"
 cohort <- cohort %>% mutate(subgroup = over70)
 ################################################################################
 
-##Set reference to 53 for subgroup and then plot interaction model for each subgroup
+##Set reference to 53 for subgroup and then run model with interaction for each subgroup
 dd <- datadist(cohort %>% filter(subgroup==0) %>% select(!cysticfibrosis_diag_date))
 options(datadist="dd")
 dd$limits["Adjust to","hba1c_value"] <- 53
@@ -1467,6 +1445,7 @@ anova(model_0)
 predict_0 <- Predict(model_0, hba1c_value = seq(30,120, by =1), subgroup =0, ref.zero=TRUE, fun = exp)
 predict_0_df <- as.data.frame(predict_0) %>% mutate(subgroup = paste0(subgroup0))
 
+#Repeat for other subgroup
 dd <- datadist(cohort %>% filter(subgroup==1) %>% select(!cysticfibrosis_diag_date))
 options(datadist="dd")
 dd$limits["Adjust to","hba1c_value"] <- 53
@@ -1477,7 +1456,6 @@ model_1 <- cph(Surv(survival_time,outcome) ~ subgroup * rcs(hba1c_value,5) + gen
                  ckd_stage + acr_cat + treatment_6m + oralsteroids_6m + immunosuppressants_6m + labas_6m + ltras_6m, data = cohort, x= T, y=T)
 
 anova(model_1)
-#should be same as above
 
 predict_1 <- Predict(model_1, hba1c_value = seq(30,120, by =1), subgroup=1, ref.zero=TRUE, fun = exp)
 predict_1_df <- as.data.frame(predict_1) %>% mutate(subgroup = paste0(subgroup1))
@@ -1485,7 +1463,7 @@ predict_1_df <- as.data.frame(predict_1) %>% mutate(subgroup = paste0(subgroup1)
 #Combine
 subgroup_df <- predict_0_df %>% rbind(predict_1_df)
 
-#Set values for 95%CI outside range to limit values
+#Set values for 95%CI outside plot range to limit values
 subgroup_df <- subgroup_df %>% mutate(lower = ifelse(lower<0.5, 0.5, ifelse(lower>3,3, lower)), upper = ifelse(upper<0.5, 0.5, ifelse(upper>3,3, upper)))
 
 #Plot
@@ -1505,6 +1483,7 @@ plot<- ggplot(data=subgroup_df,aes(x=hba1c_value, y=yhat, group = subgroup)) +
         panel.background = element_blank()) +
   theme(legend.title = element_blank(), legend.text = element_text(size=10), legend.position = c(0.2,0.9), legend.background = element_blank())
 
+#Paste subgroup names
 cohort <- cohort %>% mutate(subgroup = ifelse(subgroup ==1, paste0(subgroup1), ifelse(subgroup ==0, paste0(subgroup0), NA)))
 
 
@@ -1574,10 +1553,8 @@ cohort <- cohort %>% filter(regstartdate <= index.date.minus1y)
 #Exclude people with diabetes diagnosed during study
 cohort <- cohort %>% filter(dm_diag_date_all <= index.date)
 
-#Code subgroups as binary variables
-cohort <- cohort %>% mutate(over70 = ifelse(age_at_index >=70, 1, 0), complications = ifelse(number_complications !=0 | ckd_stage == "Stage 3a" | ckd_stage == "Stage 3b" | ckd_stage == "Stage 4" | ckd_stage == "Stage 5", 1, 0),
-                            cvd = ifelse((preindex_heartfailure ==1 | preindex_myocardialinfarction ==1 | preindex_stroke ==1 | preindex_af ==1 | preindex_angina ==1 | preindex_ihd ==1 | preindex_pad ==1 | preindex_revasc ==1 | preindex_tia ==1), 1, 0),
-                            recent_resp_infection_hosp = ifelse(recent_hosp_resp_infect ==1, 1, 0), insulin = ifelse(INS_6m ==1, 1, 0), sex = ifelse(gender ==1, 1, 0))
+#Code subgroup as binary variables
+cohort <- cohort %>% mutate(sex = ifelse(gender ==1, 1, 0))
 
 #Setting variables to factors and setting reference category
 #Gender
@@ -1717,7 +1694,7 @@ subgroup0 <- "Females"
 cohort <- cohort %>% mutate(subgroup = sex)
 ################################################################################
 
-##Set reference to 53 for subgroup and then plot interaction model for each subgroup
+##Set reference to 53 for subgroup and then run model with interaction for each subgroup
 dd <- datadist(cohort %>% filter(subgroup==0) %>% select(!cysticfibrosis_diag_date))
 options(datadist="dd")
 dd$limits["Adjust to","hba1c_value"] <- 53
@@ -1732,6 +1709,7 @@ anova(model_0)
 predict_0 <- Predict(model_0, hba1c_value = seq(30,120, by =1), subgroup =0, ref.zero=TRUE, fun = exp)
 predict_0_df <- as.data.frame(predict_0) %>% mutate(subgroup = paste0(subgroup0))
 
+#Repeat for other subgroup
 dd <- datadist(cohort %>% filter(subgroup==1) %>% select(!cysticfibrosis_diag_date))
 options(datadist="dd")
 dd$limits["Adjust to","hba1c_value"] <- 53
@@ -1742,7 +1720,6 @@ model_1 <- cph(Surv(survival_time,outcome) ~ subgroup * rcs(hba1c_value,5) + age
                  ckd_stage + acr_cat + treatment_6m + oralsteroids_6m + immunosuppressants_6m + labas_6m + ltras_6m, data = cohort, x= T, y=T)
 
 anova(model_1)
-#should be same as above
 
 predict_1 <- Predict(model_1, hba1c_value = seq(30,120, by =1), subgroup=1, ref.zero=TRUE, fun = exp)
 predict_1_df <- as.data.frame(predict_1) %>% mutate(subgroup = paste0(subgroup1))
@@ -1750,7 +1727,7 @@ predict_1_df <- as.data.frame(predict_1) %>% mutate(subgroup = paste0(subgroup1)
 #Combine
 subgroup_df <- predict_0_df %>% rbind(predict_1_df)
 
-#Set values for 95%CI outside range to limit values
+#Set values for 95%CI outside plot range to limit values
 subgroup_df <- subgroup_df %>% mutate(lower = ifelse(lower<0.5, 0.5, ifelse(lower>3,3, lower)), upper = ifelse(upper<0.5, 0.5, ifelse(upper>3,3, upper)))
 
 #Plot
@@ -1770,6 +1747,7 @@ plot<- ggplot(data=subgroup_df,aes(x=hba1c_value, y=yhat, group = subgroup)) +
         panel.background = element_blank()) +
   theme(legend.title = element_blank(), legend.text = element_text(size=10), legend.position = c(0.2,0.9), legend.background = element_blank())
 
+#Paste subgroup names
 cohort <- cohort %>% mutate(subgroup = ifelse(subgroup ==1, paste0(subgroup1), ifelse(subgroup ==0, paste0(subgroup0), NA)))
 
 
@@ -1814,7 +1792,6 @@ index.date = as.Date("2016-09-01") #change these for different cohorts
 end.date = as.Date("2019-05-31")
 
 ###Calculate survival dates and times###########################################
-#Also censor for deregistration here as study period is over 2 years
 cohort <- cohort %>% mutate(survival_date = end.date) %>% mutate(survival_date = ifelse(outcome ==1 & outcome_date < survival_date, outcome_date, survival_date)) %>%
   mutate(survival_date = ifelse(!is.na(regenddate) & regenddate < survival_date, regenddate, survival_date)) %>% mutate(survival_date = ifelse(!is.na(dod) & dod < survival_date, dod, survival_date)) %>% 
   mutate(outcome = ifelse(outcome ==1 & outcome_date == survival_date, 1, 0)) %>% mutate(survival_time = datediff(survival_date, index.date)) %>% 
@@ -1836,10 +1813,8 @@ cohort <- cohort %>% filter(regstartdate <= index.date.minus1y)
 #Exclude people with diabetes diagnosed during study
 cohort <- cohort %>% filter(dm_diag_date_all <= index.date)
 
-#Code subgroups as binary variables
-cohort <- cohort %>% mutate(over70 = ifelse(age_at_index >=70, 1, 0), complications = ifelse(number_complications !=0 | ckd_stage == "Stage 3a" | ckd_stage == "Stage 3b" | ckd_stage == "Stage 4" | ckd_stage == "Stage 5", 1, 0),
-                            cvd = ifelse((preindex_heartfailure ==1 | preindex_myocardialinfarction ==1 | preindex_stroke ==1 | preindex_af ==1 | preindex_angina ==1 | preindex_ihd ==1 | preindex_pad ==1 | preindex_revasc ==1 | preindex_tia ==1), 1, 0),
-                            recent_resp_infection_hosp = ifelse(recent_hosp_resp_infect ==1, 1, 0), insulin = ifelse(INS_6m ==1, 1, 0), sex = ifelse(gender ==1, 1, 0))
+#Code subgroup as binary variables
+cohort <- cohort %>% mutate(sex = ifelse(gender ==1, 1, 0))
 
 
 #Setting variables to factors and setting reference category
@@ -1981,7 +1956,7 @@ subgroup0 <- "Females"
 cohort <- cohort %>% mutate(subgroup = sex)
 ################################################################################
 
-##Set reference to 53 for subgroup and then plot interaction model for each subgroup
+##Set reference to 53 for subgroup and then run model with interaction for each subgroup
 dd <- datadist(cohort %>% filter(subgroup==0) %>% select(!cysticfibrosis_diag_date))
 options(datadist="dd")
 dd$limits["Adjust to","hba1c_value"] <- 53
@@ -1996,6 +1971,7 @@ anova(model_0)
 predict_0 <- Predict(model_0, hba1c_value = seq(30,120, by =1), subgroup =0, ref.zero=TRUE, fun = exp)
 predict_0_df <- as.data.frame(predict_0) %>% mutate(subgroup = paste0(subgroup0))
 
+#Repeat for other subgroup
 dd <- datadist(cohort %>% filter(subgroup==1) %>% select(!cysticfibrosis_diag_date))
 options(datadist="dd")
 dd$limits["Adjust to","hba1c_value"] <- 53
@@ -2006,7 +1982,6 @@ model_1 <- cph(Surv(survival_time,outcome) ~ subgroup * rcs(hba1c_value,3) + age
                  ckd_stage + acr_cat + treatment_6m + oralsteroids_6m + immunosuppressants_6m + labas_6m + ltras_6m, data = cohort, x= T, y=T)
 
 anova(model_1)
-#should be same as above
 
 predict_1 <- Predict(model_1, hba1c_value = seq(30,120, by =1), subgroup=1, ref.zero=TRUE, fun = exp)
 predict_1_df <- as.data.frame(predict_1) %>% mutate(subgroup = paste0(subgroup1))
@@ -2014,7 +1989,7 @@ predict_1_df <- as.data.frame(predict_1) %>% mutate(subgroup = paste0(subgroup1)
 #Combine
 subgroup_df <- predict_0_df %>% rbind(predict_1_df)
 
-#Set values for 95%CI outside range to limit values
+#Set values for 95%CI outside plot range to limit values
 subgroup_df <- subgroup_df %>% mutate(lower = ifelse(lower<0.5, 0.5, ifelse(lower>3,3, lower)), upper = ifelse(upper<0.5, 0.5, ifelse(upper>3,3, upper)))
 
 #Plot
@@ -2034,6 +2009,7 @@ plot<- ggplot(data=subgroup_df,aes(x=hba1c_value, y=yhat, group = subgroup)) +
         panel.background = element_blank()) +
   theme(legend.title = element_blank(), legend.text = element_text(size=10), legend.position = c(0.2,0.9), legend.background = element_blank())
 
+#Paste subgroup names
 cohort <- cohort %>% mutate(subgroup = ifelse(subgroup ==1, paste0(subgroup1), ifelse(subgroup ==0, paste0(subgroup0), NA)))
 
 
@@ -2099,10 +2075,8 @@ cohort <- cohort %>% filter(regstartdate <= index.date.minus1y)
 #Exclude people with diabetes diagnosed during study
 cohort <- cohort %>% filter(dm_diag_date_all <= index.date)
 
-#Code subgroups as binary variables
-cohort <- cohort %>% mutate(over70 = ifelse(age_at_index >=70, 1, 0), complications = ifelse(number_complications !=0 | ckd_stage == "Stage 3a" | ckd_stage == "Stage 3b" | ckd_stage == "Stage 4" | ckd_stage == "Stage 5", 1, 0),
-                            cvd = ifelse((preindex_heartfailure ==1 | preindex_myocardialinfarction ==1 | preindex_stroke ==1 | preindex_af ==1 | preindex_angina ==1 | preindex_ihd ==1 | preindex_pad ==1 | preindex_revasc ==1 | preindex_tia ==1), 1, 0),
-                            recent_resp_infection_hosp = ifelse(recent_hosp_resp_infect ==1, 1, 0), insulin = ifelse(INS_6m ==1, 1, 0), sex = ifelse(gender ==1, 1, 0))
+#Code subgroup as binary variables
+cohort <- cohort %>% mutate(sex = ifelse(gender ==1, 1, 0))
 
 
 #Setting variables to factors and setting reference category
@@ -2244,7 +2218,7 @@ subgroup0 <- "Females"
 cohort <- cohort %>% mutate(subgroup = sex)
 ################################################################################
 
-##Set reference to 53 for subgroup and then plot interaction model for each subgroup
+##Set reference to 53 for subgroup and then run model with interaction for each subgroup
 dd <- datadist(cohort %>% filter(subgroup==0) %>% select(!cysticfibrosis_diag_date))
 options(datadist="dd")
 dd$limits["Adjust to","hba1c_value"] <- 53
@@ -2259,6 +2233,7 @@ anova(model_0)
 predict_0 <- Predict(model_0, hba1c_value = seq(30,120, by =1), subgroup =0, ref.zero=TRUE, fun = exp)
 predict_0_df <- as.data.frame(predict_0) %>% mutate(subgroup = paste0(subgroup0))
 
+#Repeat for other subgroup
 dd <- datadist(cohort %>% filter(subgroup==1) %>% select(!cysticfibrosis_diag_date))
 options(datadist="dd")
 dd$limits["Adjust to","hba1c_value"] <- 53
@@ -2269,7 +2244,6 @@ model_1 <- cph(Surv(survival_time,outcome) ~ subgroup * rcs(hba1c_value,5) + age
                  ckd_stage + acr_cat + treatment_6m + oralsteroids_6m + immunosuppressants_6m + labas_6m + ltras_6m, data = cohort, x= T, y=T)
 
 anova(model_1)
-#should be same as above
 
 predict_1 <- Predict(model_1, hba1c_value = seq(30,120, by =1), subgroup=1, ref.zero=TRUE, fun = exp)
 predict_1_df <- as.data.frame(predict_1) %>% mutate(subgroup = paste0(subgroup1))
@@ -2277,7 +2251,7 @@ predict_1_df <- as.data.frame(predict_1) %>% mutate(subgroup = paste0(subgroup1)
 #Combine
 subgroup_df <- predict_0_df %>% rbind(predict_1_df)
 
-#Set values for 95%CI outside range to limit values
+#Set values for 95%CI outside plot range to limit values
 subgroup_df <- subgroup_df %>% mutate(lower = ifelse(lower<0.5, 0.5, ifelse(lower>3,3, lower)), upper = ifelse(upper<0.5, 0.5, ifelse(upper>3,3, upper)))
 
 #Plot
@@ -2297,6 +2271,7 @@ plot<- ggplot(data=subgroup_df,aes(x=hba1c_value, y=yhat, group = subgroup)) +
         panel.background = element_blank()) +
   theme(legend.title = element_blank(), legend.text = element_text(size=10), legend.position = c(0.2,0.9), legend.background = element_blank())
 
+#Paste subgroup names
 cohort <- cohort %>% mutate(subgroup = ifelse(subgroup ==1, paste0(subgroup1), ifelse(subgroup ==0, paste0(subgroup0), NA)))
 
 
@@ -2324,7 +2299,7 @@ pneumo_sex_plot <- plot
 pneumo_sex_plot
 
 ################################################################################
-
+#Combine all plots into grid
 combined_plot <- (covid_all_plot + flu_all_plot + pneumo_all_plot) /
   (covid_over70_plot + flu_over70_plot + pneumo_over70_plot)/
   (covid_sex_plot + flu_sex_plot + pneumo_sex_plot)

@@ -6,8 +6,6 @@
 
 #Load packages
 library(tidyverse)
-library(lubridate)
-library(survminer)
 library(survival)
 library(forestplot)
 
@@ -84,6 +82,7 @@ fluvacc_2_2years <- fluvacc_raw_2 %>% filter(!is.na(issuedate)) %>% inner_join(c
 
 fluvacc <- collect(fluvacc_1_2years %>% union(fluvacc_2_2years))
 
+#Join with cohort
 cohort <- cohort %>% left_join(fluvacc, by = "patid") %>% mutate(fluvacc_2years = ifelse(is.na(fluvacc_2years), 0 , fluvacc_2years))
 cohort %>% filter(fluvacc_2years ==1) %>% count()
 cohort %>% filter(fluvacc_2years ==0) %>% count()

@@ -6,7 +6,6 @@
 
 #Load packages
 library(tidyverse)
-library(lubridate)
 library(tableone)
 library(kableExtra)
 
@@ -16,8 +15,6 @@ library(aurum)
 ###Connecting to data and setting up analysis###################################
 #Initialise connection
 cprd = CPRDData$new(cprdEnv = "test-remote",cprdConf = "C:/Users/rh530/.aurum.yaml")
-codesets = cprd$codesets()
-codes = codesets$getAllCodeSetVersion(v = "31/10/2021")
 
 #Setting up/loading analysis test
 analysis = cprd$analysis("Rhian_covid")
@@ -47,8 +44,10 @@ cohort <- cohort %>% mutate(survival_date = end.date) %>% mutate(survival_date =
 
 #Collect
 cohort <- collect(cohort)
+
 #Filter cohort
 cohort <- cohort %>% filter(diabetes_type == "type 2" & dm_diag_age_all >=20 & age_at_index >=18)
+
 #Exclude those with cystic fibrosis
 cohort <- cohort %>% filter(is.na(cysticfibrosis_diag_date))
 
@@ -214,8 +213,10 @@ cohort <- cohort %>% mutate(survival_date = end.date) %>% mutate(survival_date =
 
 #Collect
 cohort <- collect(cohort)
+
 #Filter cohort
 cohort <- cohort %>% filter(diabetes_type == "type 2" & dm_diag_age_all >=20 & age_at_index >=18)
+
 #Exclude those with cystic fibrosis
 cohort <- cohort %>% filter(is.na(cysticfibrosis_diag_date))
 
@@ -381,8 +382,10 @@ cohort <- cohort %>% mutate(survival_date = end.date) %>% mutate(survival_date =
 
 #Collect
 cohort <- collect(cohort)
+
 #Filter cohort
 cohort <- cohort %>% filter(diabetes_type == "type 2" & dm_diag_age_all >=20 & age_at_index >=18)
+
 #Exclude those with cystic fibrosis
 cohort <- cohort %>% filter(is.na(cysticfibrosis_diag_date))
 

@@ -11,15 +11,16 @@ library(tidyverse)
 library(aurum)
 library(EHRBiomarkr)
 
-###Connecting to data and setting up analysis###################################
+###Connecting to data analysis##################################################
 #Initialise connection
 cprd = CPRDData$new(cprdEnv = "test-remote",cprdConf = "C:/Users/rh530/.aurum.yaml")
 codesets = cprd$codesets()
 codes = codesets$getAllCodeSetVersion(v = "31/10/2021")
 
-#Setting up/loading analysis test
+#Connect to analysis
 analysis = cprd$analysis("Rhian_covid")
 
+#Set cohort/index dates
 cohort.name <- "sep2016"
 infection <- "influenza"
 index.date <- as.Date("2016-09-01")
@@ -34,13 +35,15 @@ hospitalisations <- cohort %>% select(patid) %>% left_join(cprd$tables$hesDiagno
   inner_join(codes[[paste0("icd10_",infection)]], by=c("ICD"="icd10")) %>% left_join(cprd$tables$hesHospital) %>% filter(admimeth != "11" & admimeth != "12" & admimeth != "13") %>%
   mutate(same_day_discharge = ifelse(duration ==0, 1, 0)) %>% analysis$cached(paste0(cohort.name, "_", infection, "_hosps"), indexes = c("patid", "admidate"))
 
+#Find first hospitalisation after index date
 first_hospitalisation <- hospitalisations %>% select(patid, spno, admidate) %>% distinct() %>% group_by(patid) %>% summarise(hosp_date = min(admidate)) %>% mutate(hospitalisation_outcome =1) %>% analysis$cached(paste0(cohort.name, "_", infection, "_hosp_first"), indexes = c("patid", "hosp_date"))
 
-##Primary hospitalisation diagnosis (for sensitivity analysis)
+##Hospitalisation with infection as primary diagnosis (for sensitivity analysis)
 primary_hospitalisations <- cohort %>% select(patid) %>% left_join(cprd$tables$hesPrimaryDiagHosp) %>% filter(admidate >= index.date & admidate <= end.date) %>%
   inner_join(codes[[paste0("icd10_",infection)]], by=c("ICD_PRIMARY"="icd10")) %>% left_join(cprd$tables$hesHospital) %>% filter(admimeth != "11" & admimeth != "12" & admimeth != "13") %>%
   mutate(same_day_discharge = ifelse(duration ==0, 1, 0))
 
+#First first primary diagnosis hospitalisation
 primary_first_hospitalisation <- primary_hospitalisations %>% select(patid, spno, admidate) %>% distinct() %>% group_by(patid) %>% summarise(hosp_date_primary = min(admidate)) %>% mutate(primary_diag_hosp =1) %>% analysis$cached(paste0(cohort.name, "_", infection, "_prim_diag"))
 
 ###DEATH########################################################################
@@ -58,7 +61,7 @@ deaths_ons <- cprd$tables$onsDeath %>% inner_join(codes[[paste0("icd10_",infecti
 
 deaths_ons <- deaths_ons %>% group_by(patid) %>% mutate(primary_death_cause = max(primary_death_cause)) %>% ungroup() %>% select(patid, primary_death_cause) %>% distinct() %>% mutate(death_in_ONS =1)
 
-#HES deaths
+#Deaths in HES (discharge method/ location = death)
 HES_deaths <- hospitalisations %>% filter(dismeth==4 | disdest==79) %>% analysis$cached(paste0(cohort.name, "_", infection, "_hosp_deaths"), indexes = "patid")
 HES_deaths <- HES_deaths %>% distinct(patid) %>% mutate(death_in_HES = 1)
 

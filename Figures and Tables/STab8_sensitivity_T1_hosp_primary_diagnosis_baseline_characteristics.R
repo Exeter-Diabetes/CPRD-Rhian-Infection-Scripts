@@ -6,9 +6,7 @@
 
 #Load packages
 library(tidyverse)
-library(lubridate)
 library(tableone)
-library(stargazer)
 library(kableExtra)
 
 #Load aurum package
@@ -17,8 +15,6 @@ library(aurum)
 ###Connecting to data and setting up analysis###################################
 #Initialise connection
 cprd = CPRDData$new(cprdEnv = "test-remote",cprdConf = "C:/Users/rh530/.aurum.yaml")
-codesets = cprd$codesets()
-codes = codesets$getAllCodeSetVersion(v = "31/10/2021")
 
 #Setting up/loading analysis test
 analysis = cprd$analysis("Rhian_covid")
@@ -46,8 +42,10 @@ cohort <- cohort %>% mutate(survival_date = end.date) %>% mutate(survival_date =
 
 #Collect
 cohort <- collect(cohort)
+
 #Filter cohort
 cohort <- cohort %>% filter(diabetes_type == "type 1")
+
 #Exclude those with cystic fibrosis
 cohort <- cohort %>% filter(is.na(cysticfibrosis_diag_date))
 
@@ -135,8 +133,10 @@ cohort <- cohort %>% mutate(survival_date = end.date) %>% mutate(survival_date =
 
 #Collect
 cohort <- collect(cohort)
+
 #Filter cohort
 cohort <- cohort %>% filter(diabetes_type == "type 1")
+
 #Exclude those with cystic fibrosis
 cohort <- cohort %>% filter(is.na(cysticfibrosis_diag_date))
 
@@ -225,8 +225,10 @@ cohort <- cohort %>% mutate(survival_date = end.date) %>% mutate(survival_date =
 
 #Collect
 cohort <- collect(cohort)
+
 #Filter cohort
 cohort <- cohort %>% filter(diabetes_type == "type 1")
+
 #Exclude those with cystic fibrosis
 cohort <- cohort %>% filter(is.na(cysticfibrosis_diag_date))
 
@@ -292,7 +294,7 @@ tabprint2 <-as_tibble(print(tableone2)) %>%
 tabprint_pneumo <- tabprint1 %>% rename(All = Overall) %>% left_join(tabprint2, by = "measure") %>% select(measure, All, Hospitalisations = Overall) %>% filter(All != "") %>% mutate(Hospitalisations = ifelse(is.na(Hospitalisations), "0 ( 0.0)", Hospitalisations)) %>% rename("2016 cohort" = All, "Pneumonia hospitalisations" = Hospitalisations)
 
 ################################################################################
-##Add together covid and pneumonia
+##Add together
 tabprint <- tabprint_covid %>% left_join(tabprint_flu) %>% left_join(tabprint_pneumo)
 
 row_names <- data.frame(measure = c("n", "femalegender = Female (%)", "gender = Male (%)", "<18", "18-39","40-49", "50-59", "60-69", "70-79", "80+", "White", "South Asian", "Black", "Other", "Mixed", "Unknown",
