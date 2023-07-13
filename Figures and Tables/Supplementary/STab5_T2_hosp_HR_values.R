@@ -1,5 +1,7 @@
 ################################################################################
-###ANALYSIS#####################################################################
+#Script to produce Supplementary Table 5
+#Table of hazard ratios for all risk factor associations for Covid-19, influenza, and pneumonia hospitalisation in type 2 diabetes
+#Hazard ratios from multivariable Cox proportional hazards models for each infection
 ################################################################################
 
 .libPaths("C:/Users/rh530/OneDrive - University of Exeter/R/win-library/4.1")

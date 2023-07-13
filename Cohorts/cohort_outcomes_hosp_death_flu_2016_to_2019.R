@@ -1,5 +1,5 @@
 ################################################################################
-###OUTCOMES#####################################################################
+#Defining influenza hospitalisation and mortality outcomes in 2016 cohort
 ################################################################################
 
 .libPaths("C:/Users/rh530/OneDrive - University of Exeter/R/win-library/4.1")

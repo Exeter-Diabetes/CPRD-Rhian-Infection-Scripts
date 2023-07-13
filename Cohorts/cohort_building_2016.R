@@ -1,5 +1,7 @@
 ################################################################################
-###Pulling together a cohort for analysis#######################################
+#Pulling together a prevalent cohort of people with diabetes
+#Actively registered on 1st September 2016
+#Including sociodemographic features, comorbidities, biomarkers, and prescriptions
 ################################################################################
 
 .libPaths("C:/Users/rh530/OneDrive - University of Exeter/R/win-library/4.1")

@@ -1,5 +1,6 @@
 ################################################################################
-###Descriptive tables###########################################################
+#Script to produce Supplementary Table 7
+#Table of full baseline characteristics of 2020 and 2016 cohorts and people hospitalised with Covid-19, influenza, and pneumonia with type 1 diabetes
 ################################################################################
 
 .libPaths("C:/Users/rh530/OneDrive - University of Exeter/R/win-library/4.1")
@@ -19,9 +20,7 @@ cprd = CPRDData$new(cprdEnv = "test-remote",cprdConf = "C:/Users/rh530/.aurum.ya
 #Setting up/loading analysis test
 analysis = cprd$analysis("Rhian_covid")
 
-################################################################################
-###COVID
-###Set cohort###################################################################
+###COVID########################################################################
 cohort.name <- "feb2020"
 infection <- "covid"
 outcome <- "hosp" #these will be pasted into output file names
@@ -44,10 +43,8 @@ cohort <- cohort %>% mutate(survival_date = end.date) %>% mutate(survival_date =
 
 #Collect
 cohort <- collect(cohort)
-
 #Filter cohort
-cohort <- cohort %>% filter(diabetes_type == "type 2" & dm_diag_age_all >=20 & age_at_index >=18)
-
+cohort <- cohort %>% filter(diabetes_type == "type 1")
 #Exclude those with cystic fibrosis
 cohort <- cohort %>% filter(is.na(cysticfibrosis_diag_date))
 
@@ -62,6 +59,11 @@ cohort <- cohort %>% filter(dm_diag_date_all <= index.date)
 mean(cohort$survival_time)
 sd(cohort$survival_time)
 
+#Edit age groups
+cohort <- cohort %>% mutate(age_cat = ifelse(age_at_index<18, "<18", ifelse(age_at_index <40 & age_at_index>=18, "18-39", ifelse(age_at_index<50 & age_at_index>=40, "40-49", ifelse(age_at_index<60 & age_at_index>=50, "50-59", ifelse(age_at_index<70 & age_at_index>=60, "60-69", ifelse(age_at_index<80 & age_at_index>=70, "70-79", ifelse(age_at_index>=80, "80+", NA))))))))
+#And duration
+cohort <- cohort %>% mutate(duration_cat = ifelse(dm_duration_at_index <5, "<5", ifelse(dm_duration_at_index <10 & dm_duration_at_index >=5, "5-9", ifelse(dm_duration_at_index <15 & dm_duration_at_index>=10, "10-14", ifelse(dm_duration_at_index <20 & dm_duration_at_index>=15, "15-19", ifelse(dm_duration_at_index<25 & dm_duration_at_index>=20, "20-24", ifelse(dm_duration_at_index <30 & dm_duration_at_index>=25, "25-29", ifelse(dm_duration_at_index>=30, "30+", NA))))))))
+
 #Setting variables to factors
 #Gender
 cohort$gender <- factor(cohort$gender)
@@ -75,22 +77,17 @@ cohort$eth5 <- factor(cohort$eth5)
 levels(cohort$eth5) = c("White", "South Asian", "Black", "Other", "Mixed", "Unknown")
 #Deprivation
 cohort$imd_quintile <- factor(cohort$imd_quintile)
-#Region
-cohort$region <- factor(cohort$region)
 #Diabetes duration
 cohort$duration_cat <- factor(cohort$duration_cat)
 #HbA1c
 cohort$hba1c_cat <- factor(cohort$hba1c_cat)
-#Diabetes complications (as count of number)
-cohort <- cohort %>% mutate(number_complications = ifelse(number_complications ==0, "0 complications", ifelse(number_complications ==1, "1 complication", ifelse(number_complications ==2, "2 complications", ifelse(number_complications ==3, "3 complications", NA)))))
-cohort$number_complications <- factor(cohort$number_complications)
 #BMI
 cohort$bmi_cat <- factor(cohort$bmi_cat)
 
-#Generate tableone
-all_vars <- c("gender", "femalegender", "age_cat", "eth5", "imd_quintile", "duration_cat", "hba1c_cat", "number_complications", "bmi_cat")
+#Generate table one for whole cohort
+all_vars <- c("gender", "femalegender", "age_cat", "eth5", "imd_quintile", "duration_cat", "hba1c_cat", "bmi_cat")
 
-categorical_vars <-c("gender", "femalegender", "age_cat", "eth5", "imd_quintile", "duration_cat", "hba1c_cat", "number_complications", "bmi_cat")
+categorical_vars <- c("gender", "femalegender", "age_cat", "eth5", "imd_quintile", "duration_cat", "hba1c_cat", "bmi_cat")
 
 tableone1 <- CreateTableOne(vars=all_vars,data=cohort,factorVars=categorical_vars, test=FALSE)
 
@@ -100,7 +97,7 @@ tabprint1 <-as_tibble(print(tableone1)) %>%
 
 
 #Generate table one for just those with outcome
-outcome_yes <- cohort %>% filter(outcome ==1)
+outcome_yes <- cohort %>% filter(outcome ==1) 
 
 tableone2 <- CreateTableOne(vars=all_vars,data=outcome_yes,factorVars=categorical_vars, test=FALSE)
 
@@ -112,10 +109,7 @@ tabprint2 <-as_tibble(print(tableone2)) %>%
 #Combine
 tabprint_covid <- tabprint1 %>% rename(All = Overall) %>% left_join(tabprint2, by = "measure") %>% select(measure, All, Hospitalisations = Overall) %>% filter(All != "") %>% mutate(Hospitalisations = ifelse(is.na(Hospitalisations), "0 ( 0.0)", Hospitalisations)) %>% rename ("2020 cohort" = All, "Covid-19 hospitalisations" = Hospitalisations)
 
-
-################################################################################
-###FLU
-###Set cohort###################################################################
+###FLU##########################################################################
 cohort.name <- "sep2016"
 infection <- "influenza"
 outcome <- "hosp" #these will be pasted into output file names
@@ -138,10 +132,8 @@ cohort <- cohort %>% mutate(survival_date = end.date) %>% mutate(survival_date =
 
 #Collect
 cohort <- collect(cohort)
-
 #Filter cohort
-cohort <- cohort %>% filter(diabetes_type == "type 2" & dm_diag_age_all >=20 & age_at_index >=18)
-
+cohort <- cohort %>% filter(diabetes_type == "type 1")
 #Exclude those with cystic fibrosis
 cohort <- cohort %>% filter(is.na(cysticfibrosis_diag_date))
 
@@ -156,7 +148,12 @@ cohort <- cohort %>% filter(dm_diag_date_all <= index.date)
 mean(cohort$survival_time)
 sd(cohort$survival_time)
 
-#Setting variables to factors and setting reference category
+#Edit age groups
+cohort <- cohort %>% mutate(age_cat = ifelse(age_at_index<18, "<18", ifelse(age_at_index <40 & age_at_index>=18, "18-39", ifelse(age_at_index<50 & age_at_index>=40, "40-49", ifelse(age_at_index<60 & age_at_index>=50, "50-59", ifelse(age_at_index<70 & age_at_index>=60, "60-69", ifelse(age_at_index<80 & age_at_index>=70, "70-79", ifelse(age_at_index>=80, "80+", NA))))))))
+#And duration
+cohort <- cohort %>% mutate(duration_cat = ifelse(dm_duration_at_index <5, "<5", ifelse(dm_duration_at_index <10 & dm_duration_at_index >=5, "5-9", ifelse(dm_duration_at_index <15 & dm_duration_at_index>=10, "10-14", ifelse(dm_duration_at_index <20 & dm_duration_at_index>=15, "15-19", ifelse(dm_duration_at_index<25 & dm_duration_at_index>=20, "20-24", ifelse(dm_duration_at_index <30 & dm_duration_at_index>=25, "25-29", ifelse(dm_duration_at_index>=30, "30+", NA))))))))
+
+#Setting variables to factors
 #Gender
 cohort$gender <- factor(cohort$gender)
 levels(cohort$gender) = c("Male", "Female")
@@ -169,22 +166,17 @@ cohort$eth5 <- factor(cohort$eth5)
 levels(cohort$eth5) = c("White", "South Asian", "Black", "Other", "Mixed", "Unknown")
 #Deprivation
 cohort$imd_quintile <- factor(cohort$imd_quintile)
-#Region
-cohort$region <- factor(cohort$region)
 #Diabetes duration
 cohort$duration_cat <- factor(cohort$duration_cat)
 #HbA1c
 cohort$hba1c_cat <- factor(cohort$hba1c_cat)
-#Diabetes complications (as count of number)
-cohort <- cohort %>% mutate(number_complications = ifelse(number_complications ==0, "0 complications", ifelse(number_complications ==1, "1 complication", ifelse(number_complications ==2, "2 complications", ifelse(number_complications ==3, "3 complications", NA)))))
-cohort$number_complications <- factor(cohort$number_complications)
 #BMI
 cohort$bmi_cat <- factor(cohort$bmi_cat)
 
-#Generate tableone
-all_vars <- c("gender", "femalegender", "age_cat", "eth5", "imd_quintile", "duration_cat", "hba1c_cat", "number_complications", "bmi_cat")
+#Generate table one for whole cohort
+all_vars <- c("gender", "femalegender", "age_cat", "eth5", "imd_quintile", "duration_cat", "hba1c_cat", "bmi_cat")
 
-categorical_vars <-c("gender", "femalegender", "age_cat", "eth5", "imd_quintile", "duration_cat", "hba1c_cat", "number_complications", "bmi_cat")
+categorical_vars <- c("gender", "femalegender", "age_cat", "eth5", "imd_quintile", "duration_cat", "hba1c_cat", "bmi_cat")
 
 tableone1 <- CreateTableOne(vars=all_vars,data=cohort,factorVars=categorical_vars, test=FALSE)
 
@@ -194,7 +186,7 @@ tabprint1 <-as_tibble(print(tableone1)) %>%
 
 
 #Generate table one for just those with outcome
-outcome_yes <- cohort %>% filter(outcome ==1) 
+outcome_yes <- cohort %>% filter(outcome ==1)
 
 tableone2 <- CreateTableOne(vars=all_vars,data=outcome_yes,factorVars=categorical_vars, test=FALSE)
 
@@ -204,12 +196,10 @@ tabprint2 <-as_tibble(print(tableone2)) %>%
 
 
 #Combine
-tabprint_flu <- tabprint1 %>% rename(All = Overall) %>% left_join(tabprint2, by = "measure") %>% select(measure, All, Hospitalisations = Overall) %>% filter(All != "") %>% mutate(Hospitalisations = ifelse(is.na(Hospitalisations), "0 ( 0.0)", Hospitalisations)) %>% rename ("2016 cohort" = All, "Influenza hospitalisations" = Hospitalisations)
+tabprint_flu <- tabprint1 %>% rename(All = Overall) %>% left_join(tabprint2, by = "measure") %>% select(measure, All, Hospitalisations = Overall) %>% filter(All != "") %>% mutate(Hospitalisations = ifelse(is.na(Hospitalisations), "0 ( 0.0)", Hospitalisations)) %>% rename("2016 cohort" = All, "Influenza hospitalisations" = Hospitalisations)
 
 
-################################################################################
-###PNEUMONIA
-###Set cohort###################################################################
+###PNEUMONIA####################################################################
 cohort.name <- "sep2016"
 infection <- "pneumonia"
 outcome <- "hosp" #these will be pasted into output file names
@@ -232,10 +222,8 @@ cohort <- cohort %>% mutate(survival_date = end.date) %>% mutate(survival_date =
 
 #Collect
 cohort <- collect(cohort)
-
 #Filter cohort
-cohort <- cohort %>% filter(diabetes_type == "type 2" & dm_diag_age_all >=20 & age_at_index >=18)
-
+cohort <- cohort %>% filter(diabetes_type == "type 1")
 #Exclude those with cystic fibrosis
 cohort <- cohort %>% filter(is.na(cysticfibrosis_diag_date))
 
@@ -250,7 +238,12 @@ cohort <- cohort %>% filter(dm_diag_date_all <= index.date)
 mean(cohort$survival_time)
 sd(cohort$survival_time)
 
-#Setting variables to factors and setting reference category
+#Edit age groups
+cohort <- cohort %>% mutate(age_cat = ifelse(age_at_index<18, "<18", ifelse(age_at_index <40 & age_at_index>=18, "18-39", ifelse(age_at_index<50 & age_at_index>=40, "40-49", ifelse(age_at_index<60 & age_at_index>=50, "50-59", ifelse(age_at_index<70 & age_at_index>=60, "60-69", ifelse(age_at_index<80 & age_at_index>=70, "70-79", ifelse(age_at_index>=80, "80+", NA))))))))
+#And duration
+cohort <- cohort %>% mutate(duration_cat = ifelse(dm_duration_at_index <5, "<5", ifelse(dm_duration_at_index <10 & dm_duration_at_index >=5, "5-9", ifelse(dm_duration_at_index <15 & dm_duration_at_index>=10, "10-14", ifelse(dm_duration_at_index <20 & dm_duration_at_index>=15, "15-19", ifelse(dm_duration_at_index<25 & dm_duration_at_index>=20, "20-24", ifelse(dm_duration_at_index <30 & dm_duration_at_index>=25, "25-29", ifelse(dm_duration_at_index>=30, "30+", NA))))))))
+
+#Setting variables to factors
 #Gender
 cohort$gender <- factor(cohort$gender)
 levels(cohort$gender) = c("Male", "Female")
@@ -263,22 +256,17 @@ cohort$eth5 <- factor(cohort$eth5)
 levels(cohort$eth5) = c("White", "South Asian", "Black", "Other", "Mixed", "Unknown")
 #Deprivation
 cohort$imd_quintile <- factor(cohort$imd_quintile)
-#Region
-cohort$region <- factor(cohort$region)
 #Diabetes duration
 cohort$duration_cat <- factor(cohort$duration_cat)
 #HbA1c
 cohort$hba1c_cat <- factor(cohort$hba1c_cat)
-#Diabetes complications (as count of number)
-cohort <- cohort %>% mutate(number_complications = ifelse(number_complications ==0, "0 complications", ifelse(number_complications ==1, "1 complication", ifelse(number_complications ==2, "2 complications", ifelse(number_complications ==3, "3 complications", NA)))))
-cohort$number_complications <- factor(cohort$number_complications)
 #BMI
 cohort$bmi_cat <- factor(cohort$bmi_cat)
 
-#Generate tableone
-all_vars <- c("gender", "femalegender", "age_cat", "eth5", "imd_quintile", "duration_cat", "hba1c_cat", "number_complications", "bmi_cat")
+#Generate table one for whole cohort
+all_vars <- c("gender", "femalegender", "age_cat", "eth5", "imd_quintile", "duration_cat", "hba1c_cat", "bmi_cat")
 
-categorical_vars <-c("gender", "femalegender", "age_cat", "eth5", "imd_quintile", "duration_cat", "hba1c_cat", "number_complications", "bmi_cat")
+categorical_vars <- c("gender", "femalegender", "age_cat", "eth5", "imd_quintile", "duration_cat", "hba1c_cat", "bmi_cat")
 
 tableone1 <- CreateTableOne(vars=all_vars,data=cohort,factorVars=categorical_vars, test=FALSE)
 
@@ -288,7 +276,7 @@ tabprint1 <-as_tibble(print(tableone1)) %>%
 
 
 #Generate table one for just those with outcome
-outcome_yes <- cohort %>% filter(outcome ==1) 
+outcome_yes <- cohort %>% filter(outcome ==1)
 
 tableone2 <- CreateTableOne(vars=all_vars,data=outcome_yes,factorVars=categorical_vars, test=FALSE)
 
@@ -298,15 +286,15 @@ tabprint2 <-as_tibble(print(tableone2)) %>%
 
 
 #Combine
-tabprint_pneumo <- tabprint1 %>% rename(All = Overall) %>% left_join(tabprint2, by = "measure") %>% select(measure, All, Hospitalisations = Overall) %>% filter(All != "") %>% mutate(Hospitalisations = ifelse(is.na(Hospitalisations), "0 ( 0.0)", Hospitalisations)) %>% rename ("2016 cohort" = All, "Pneumonia hospitalisations" = Hospitalisations)
+tabprint_pneumo <- tabprint1 %>% rename(All = Overall) %>% left_join(tabprint2, by = "measure") %>% select(measure, All, Hospitalisations = Overall) %>% filter(All != "") %>% mutate(Hospitalisations = ifelse(is.na(Hospitalisations), "0 ( 0.0)", Hospitalisations)) %>% rename("2016 cohort" = All, "Pneumonia hospitalisations" = Hospitalisations)
 
 ################################################################################
-##Add together 
+##Add together covid and pneumonia
 tabprint <- tabprint_covid %>% left_join(tabprint_flu) %>% left_join(tabprint_pneumo)
 
-row_names <- data.frame(measure = c("n", "femalegender = Female (%)", "gender = Male (%)", "<40", "40-49","50-59", "60-69", "70-79", "80-89", "90+", "White", "South Asian", "Black", "Other", "Mixed", "Unknown",
-               "1", "2", "3", "4", "5", "Missing IMD", "<1", "1-2", "3-5", "6-9", "10-14", "15-19", "20+", "<48", "48-53", "53-64", "64-75", "75-86", "86+", "Missing HbA1c", "0 complications", "1 complication", "2 complications", "3 complications",
-               "<18.5", "18.5-24.9", "25-29.9", "30-34.9", "35-39.9", "40+", "Missing BMI"))
+row_names <- data.frame(measure = c("n", "femalegender = Female (%)", "gender = Male (%)", "<18", "18-39","40-49", "50-59", "60-69", "70-79", "80+", "White", "South Asian", "Black", "Other", "Mixed", "Unknown",
+                                    "1", "2", "3", "4", "5", "Missing IMD", "<5", "5-9", "10-14", "15-19", "20-24", "25-29", "30+", "<48", "48-53", "53-64", "64-75", "75-86", "86+", "Missing HbA1c",
+                                    "<18.5", "18.5-24.9", "25-29.9", "30-34.9", "35-39.9", "40+", "Missing BMI"))
 
 tabprint <- row_names %>% left_join(tabprint, by = "measure")
 
@@ -318,34 +306,25 @@ tab <- tabprint %>%
   mutate(measure=ifelse(measure=="Missing IMD","Missing", measure)) %>%
   mutate(measure=ifelse(measure=="Missing HbA1c","Missing", measure)) %>%
   mutate(measure=ifelse(measure=="Missing BMI","Missing", measure)) %>%
-  mutate(measure = ifelse(measure == "0 complications", "0", measure)) %>%
-  mutate(measure = ifelse(measure == "1 complication", "1", measure)) %>%
-  mutate(measure = ifelse(measure == "2 complications", "2", measure)) %>%
-  mutate(measure = ifelse(measure == "3 complications", "3", measure)) %>%
-  mutate(measure=ifelse(measure=="Unknown smoking","Unknown", measure)) %>%
   rename(" " = measure)
-
 
 #Outputting HTML table
 kableExtra::kable(tab,format="html", align="lll") %>% 
   kable_styling(bootstrap_options = c("striped","hover"), row_label_position = "lll") %>%
   pack_rows("Sex", 2,3, bold = TRUE) %>%
-  pack_rows("Age group, years",4,10, bold=TRUE) %>% 
-  pack_rows("Ethnicity",11,16, bold=TRUE)  %>% 
-  pack_rows("Index of multiple deprivation quintile",17,22, bold=TRUE)  %>%  
+  pack_rows("Age, years",4,10, bold=TRUE) %>%  
+  pack_rows("Ethnicity",11,16, bold=TRUE)  %>%  
+  pack_rows("Index of multiple deprivation quintile",17,22, bold=TRUE)  %>% 
   pack_rows("Duration of diagnosed diabetes, years",23,29, bold=TRUE)  %>%  
   pack_rows("HbA1c, mmol/mol",30,36, bold=TRUE)  %>% 
-  pack_rows("Number of microvascular complications",37,40, bold=TRUE)  %>% 
-  pack_rows("BMI, kg/m2",41,47, bold=TRUE)  %>%
+  pack_rows("BMI, kg/m2",37,43, bold=TRUE)  %>%
   column_spec(1,width="12cm") %>%
   column_spec(2,width="6cm") %>%
   column_spec(3,width="7cm") %>%
   column_spec(4,width="6cm") %>%
   column_spec(5,width="7cm") %>%
-  column_spec(6,width="7cm") %>%
-  cat(.,file="Tab1_MAIN_TABLE_T2_hosp_baseline_characteristics_reduced.html")
+  column_spec(5,width="7cm") %>%
+  cat(.,file="STab7_T1_hosp_baseline_characteristics.html")
 
 ###END##########################################################################
 rm(list=ls())
-
-

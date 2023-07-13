@@ -1,5 +1,9 @@
 ################################################################################
-###ANALYSIS#####################################################################
+#Script to produce Figure 3
+#Plot of the association of continuous BMI with hospitalisation for Covid-19, influenza, and pneumonia in type 2 diabetes
+#Overall and by sex and age subgroups
+#Using restricted cubic splines
+#Hazard ratios from multivariable Cox proportional hazards models for each infection, with subgroup interactions for subgroup analysis
 ################################################################################
 
 .libPaths("C:/Users/rh530/OneDrive - University of Exeter/R/win-library/4.1")

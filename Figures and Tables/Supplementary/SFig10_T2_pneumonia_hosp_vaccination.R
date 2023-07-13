@@ -1,5 +1,8 @@
 ################################################################################
-###ANALYSIS#####################################################################
+#Script to produce Supplementary Figure 10
+#Sensitivity analysis in people with pneumococcal vaccination ever and those without
+#Forest plot of all risk factor associations for pneumonia hospitalisation in vaccinated vs unvaccinated people with type 2 diabetes
+#Hazard ratios from multivariable Cox proportional hazards models for each infection
 ################################################################################
 
 .libPaths("C:/Users/rh530/OneDrive - University of Exeter/R/win-library/4.1")
@@ -24,7 +27,7 @@ analysis = cprd$analysis("Rhian_covid")
 
 ###Set first cohort and outcome#################################################
 cohort.name <- "sep2016"
-infection <- "influenza"
+infection <- "pneumonia"
 outcome <- "hosp" #these will be pasted into output file names
 #Set cohort
 cohort <- cohort %>% analysis$cached(paste0(cohort.name, "_", infection, "_outcomes"), unique_indexes = "patid", indexes = "hosp_date")
@@ -43,7 +46,6 @@ cohort <- cohort %>% mutate(survival_date = end.date) %>% mutate(survival_date =
   mutate(outcome = ifelse(outcome ==1 & outcome_date == survival_date, 1, 0)) %>% mutate(survival_time = datediff(survival_date, index.date)) %>% 
   analysis$cached(paste0("surv_",infection, "_", outcome), unique_indexes = "patid", indexes = c("survival_date", "survival_time"))
 
-
 #Collect
 cohort <- collect(cohort)
 
@@ -53,7 +55,7 @@ cohort <- cohort %>% filter(diabetes_type == "type 2" & dm_diag_age_all >=20 & a
 #Exclude those with cystic fibrosis
 cohort <- cohort %>% filter(is.na(cysticfibrosis_diag_date))
 
-##Exclude people registered <1 year
+#Exclude people registered <1 year
 index.date.minus1y <- index.date - years(1)
 cohort <- cohort %>% filter(regstartdate <= index.date.minus1y)
 
@@ -68,29 +70,27 @@ mean(cohort$survival_time)
 sd(cohort$survival_time)
 
 ################################################################################
-#Adding flu vacc
-#Flu vaccination last two years
-fluvacc_raw_1 <- cprd$tables$observation %>% inner_join(codes$fluvacc_stopflu_med) %>% analysis$cached("all_fluvacc_stopflu1", indexes= c("patid", "obsdate"))
-fluvacc_raw_2 <- cprd$tables$drugIssue %>% inner_join(codes$fluvacc_stopflu_prod) %>% analysis$cached("all_fluvacc_stopflu2", indexes= c("patid", "issuedate"))
+#Adding pneumococcal vacc
+#Pneumococcal vaccination ever
+pneumovacc_raw_1 <- cprd$tables$observation %>% inner_join(codes$pneumococcal_vaccine_med) %>% analysis$cached("all_pneumovacc1", indexes= c("patid", "obsdate"))
+pneumovacc_raw_2 <- cprd$tables$drugIssue %>% inner_join(codes$pneumococcal_vaccine_prod) %>% analysis$cached("all_pneumovacc2", indexes= c("patid", "issuedate"))
 
-two.years.earlier <- index.date - years(2)
+pneumovacc_1_ever <- pneumovacc_raw_1 %>% filter(!is.na(obsdate)) %>% inner_join(cprd$tables$validDateLookup) %>% filter(obsdate>=min_dob & obsdate<=gp_ons_end_date) %>% 
+  filter(obsdate < index.date) %>% distinct(patid) %>% mutate(pneumovacc_ever =1)
+pneumovacc_2_ever <- pneumovacc_raw_2 %>% filter(!is.na(issuedate)) %>% inner_join(cprd$tables$validDateLookup) %>% filter(issuedate>=min_dob & issuedate<=gp_ons_end_date) %>% 
+  filter(issuedate < index.date) %>% distinct(patid) %>% mutate(pneumovacc_ever =1)
 
-fluvacc_1_2years <- fluvacc_raw_1 %>% filter(!is.na(obsdate)) %>% inner_join(cprd$tables$validDateLookup) %>% filter(obsdate>=min_dob & obsdate<=gp_ons_end_date) %>% 
-  filter(obsdate < index.date & obsdate >= two.years.earlier) %>% distinct(patid) %>% mutate(fluvacc_2years =1)
-fluvacc_2_2years <- fluvacc_raw_2 %>% filter(!is.na(issuedate)) %>% inner_join(cprd$tables$validDateLookup) %>% filter(issuedate>=min_dob & issuedate<=gp_ons_end_date) %>% 
-  filter(issuedate < index.date & issuedate >= two.years.earlier) %>% distinct(patid) %>% mutate(fluvacc_2years =1)
-
-fluvacc <- collect(fluvacc_1_2years %>% union(fluvacc_2_2years))
+pneumovacc <- collect(pneumovacc_1_ever %>% union(pneumovacc_2_ever))
 
 #Join with cohort
-cohort <- cohort %>% left_join(fluvacc, by = "patid") %>% mutate(fluvacc_2years = ifelse(is.na(fluvacc_2years), 0 , fluvacc_2years))
-cohort %>% filter(fluvacc_2years ==1) %>% count()
-cohort %>% filter(fluvacc_2years ==0) %>% count()
+cohort <- cohort %>% left_join(pneumovacc, by = "patid") %>% mutate(pneumovacc_ever = ifelse(is.na(pneumovacc_ever), 0 , pneumovacc_ever))
+cohort %>% filter(pneumovacc_ever ==1) %>% count()
+cohort %>% filter(pneumovacc_ever ==0) %>% count()
 
 #Check survival time distribution for those with outcome
 cohort %>% filter(outcome ==1) %>% ggplot(aes(survival_time)) +  geom_histogram(binwidth = 5, colour= "white", fill="plum3")
-cohort %>% filter(outcome ==1 & fluvacc_2years ==1) %>% ggplot(aes(survival_time)) +  geom_histogram(binwidth = 5, colour= "white", fill="plum3")
-cohort %>% filter(outcome ==1 & fluvacc_2years ==0) %>% ggplot(aes(survival_time)) +  geom_histogram(binwidth = 5, colour= "white", fill="plum3")
+cohort %>% filter(outcome ==1 & pneumovacc_ever ==1) %>% ggplot(aes(survival_time)) +  geom_histogram(binwidth = 5, colour= "white", fill="plum3")
+cohort %>% filter(outcome ==1 & pneumovacc_ever ==0) %>% ggplot(aes(survival_time)) +  geom_histogram(binwidth = 5, colour= "white", fill="plum3")
 
 ################################################################################
 #Setting variables to factors and setting reference category
@@ -225,8 +225,8 @@ cohort$ltras_6m <- factor(cohort$ltras_6m)
 levels(cohort$ltras_6m) <- c("No", "Yes")
 
 
-cohort_vaccinated <- cohort %>% filter(fluvacc_2years ==1)
-cohort_unvaccinated <- cohort %>% filter(fluvacc_2years ==0)
+cohort_vaccinated <- cohort %>% filter(pneumovacc_ever ==1)
+cohort_unvaccinated <- cohort %>% filter(pneumovacc_ever ==0)
 
 ################################################################################
 ###RUN MODELS AND BRING TOGETHER IN FOREST PLOT#################################
@@ -454,7 +454,7 @@ coefs1 <- row_names_with_ref %>% left_join(coefs1) %>% mutate(mean = ifelse(is.n
 coefs2 <- row_names_with_ref %>% left_join(coefs2) %>% mutate(mean = ifelse(is.na(mean), 1, mean), lower = ifelse(is.na(lower), 1, lower), upper = ifelse(is.na(upper), 1, upper))
 
 #Adding category names
-row_names_with_groups <- data.frame(row_name = c("Sex", "Female", "Male", "Age group, years", "<40", "40-49","50-59", "60-69", "70-79", "80-89", "90+", "Ethnicity", "White", "South Asian", "Black", "Other", "Mixed", "Unknown ethnicity", "Index of multiple deprivation quintile*", "1 (least deprived)", "2", "3", "4", "5 (most deprived)",
+row_names_with_groups <- data.frame(row_name = c("Sex", "Female", "Male", "Age group, years", "<40", "40-49","50-59", "60-69", "70-79", "80-89", "90+", "Ethnicity", "White", "South Asian", "Black", "Other", "Mixed", "Unknown ethnicity", "Index of multiple deprivation quintile", "1 (least deprived)", "2", "3", "4", "5 (most deprived)", "Missing IMD",
                                                  "Duration of diabetes, years", "<1", "1-2", "3-5", "6-9", "10-14", "15-19", "20+", "HbA1c, mmol/mol", "<48", "48-53", "53-64", "64-75", "75-86", "86+", "Missing HbA1c", "Number of microvascular complications", "0 complications", "1 complication", "2 complications", "3 complications",
                                                  "BMI, kg/m2", "<18.5", "18.5-24.9", "25-29.9", "30-34.9", "35-39.9", "40+", "Missing BMI", "Smoking status", "Active smoker", "Ex-smoker", "Non-smoker", "Unknown smoking", 
                                                  "Comorbidities", "Cardiovascular", "Hypertension", "Atrial fibrillation", "Angina", "Previous myocardial infarction", "Previous cardiac revascularisation", "Other ischaemic heart disease", "Heart failure", "Peripheral arterial disease", 
@@ -484,20 +484,20 @@ fp <- coefs %>% forestplot(labeltext = row_name,
                            lower = c(lower.x, lower.y),
                            upper = c(upper.x, upper.y),
                            hrzl_lines = gpar(col="#444444"),
-                           col=fpColors(box=c("#b2df8a","#33a02c"), lines=c("#b2df8a","#33a02c"), zero = "gray50"), # this changes the box/ line colour- use when have multiple infections plotted
+                           col=fpColors(box=c("#a6cee3","#1f78b4"), lines=c("#a6cee3","#1f78b4"), zero = "gray50"), # this changes the box/ line colour- use when have multiple infections plotted
                            xticks = tick,
                            boxsize = .2,
                            graphwidth = unit(10, 'cm'),
                            zero = 1,
                            xlog = TRUE,
                            ci.vertices = TRUE, #makes ends T
-                           clip = c(0.25,5),
+                           clip = c(0.2,6),
                            new_page = TRUE,
                            fn.ci_norm = c(fpDrawCircleCI, fpDrawDiamondCI), #can use this to change shape of box
                            lty.ci =1, #this is confidence interval line type
                            txt_gp = fpTxtGp(label = gpar(cex = 0.7), ticks  = gpar(cex = 0.7), xlab = gpar(cex = 0.7), legend = gpar(cex = 0.7), summary = gpar(cex = 0.7)),
                            xlab = "Hazard ratio",
-                           is.summary = c(TRUE, rep(FALSE, 2), TRUE, rep(FALSE,7), TRUE, rep(FALSE,6), TRUE, rep(FALSE,5), TRUE, rep(FALSE,7), TRUE, rep(FALSE,7), TRUE, rep(FALSE,4), TRUE, rep(FALSE,7), TRUE, rep(FALSE,4), TRUE, TRUE, rep(FALSE,8), TRUE, rep(FALSE,2), TRUE, rep(FALSE,2), TRUE, rep(FALSE,4), TRUE, rep(FALSE,2), TRUE, rep(FALSE,2), TRUE, rep(FALSE,7), TRUE, rep(FALSE, 4), TRUE, rep(FALSE,3)),
+                           is.summary = c(TRUE, rep(FALSE, 2), TRUE, rep(FALSE,7), TRUE, rep(FALSE,6), TRUE, rep(FALSE,6), TRUE, rep(FALSE,7), TRUE, rep(FALSE,7), TRUE, rep(FALSE,4), TRUE, rep(FALSE,7), TRUE, rep(FALSE,4), TRUE, TRUE, rep(FALSE,8), TRUE, rep(FALSE,2), TRUE, rep(FALSE,2), TRUE, rep(FALSE,4), TRUE, rep(FALSE,2), TRUE, rep(FALSE,2), TRUE, rep(FALSE,7), TRUE, rep(FALSE, 4), TRUE, rep(FALSE,3)),
                            legend = c("Vaccinated", "Unvaccinated"),
                            legend_args = fpLegend(pos = list(x=.79, y=1, align = "horizontal"))
 )
@@ -505,7 +505,7 @@ fp
 
 #Save as pdf
 pdf.options(reset = TRUE, onefile = TRUE)
-pdf("SFig11_T2_flu_hosp_vaccination.pdf",width=10,height=14)
+pdf("SFig10_T2_pneumonia_hosp_vaccination.pdf",width=10,height=14)
 fp
 dev.off()
 

@@ -1,5 +1,7 @@
 ################################################################################
-###Descriptive tables###########################################################
+#Script to produce Supplementary Table 8
+#Sensitivity analysis restricting outcome to infection as a primary diagnoses of hospitalisation
+#Table of full baseline characteristics of 2020 and 2016 cohorts and people hospitalised with Covid-19, influenza, and pneumonia (primary diagnosis) with type 1 diabetes
 ################################################################################
 
 .libPaths("C:/Users/rh530/OneDrive - University of Exeter/R/win-library/4.1")

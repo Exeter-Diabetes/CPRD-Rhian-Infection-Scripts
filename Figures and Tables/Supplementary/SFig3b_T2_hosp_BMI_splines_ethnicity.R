@@ -1,5 +1,9 @@
 ################################################################################
-###ANALYSIS#####################################################################
+#Script to produce Supplementary Figure 3b
+#Plot of the association of continuous BMI with hospitalisation for Covid-19, influenza, and pneumonia in type 2 diabetes
+#By ethnicity subgroups
+#Using restricted cubic splines
+#Hazard ratios from multivariable Cox proportional hazards models for each infection, with subgroup interactions
 ################################################################################
 
 .libPaths("C:/Users/rh530/OneDrive - University of Exeter/R/win-library/4.1")
@@ -201,11 +205,11 @@ subgroup3 <- "Black"
 cohort <- cohort %>% mutate(subgroup = eth5)
 ################################################################################
 
-##Set reference to 53 for subgroup and then run model with interaction for each subgroup
+##Set reference to 30 for subgroup and then run model with interaction for each subgroup
 dd <- datadist(cohort %>% filter(subgroup=="White") %>% select(!cysticfibrosis_diag_date))
 options(datadist="dd")
-dd$limits["Adjust to","hba1c_value"] <- 53
-model_1 <- cph(Surv(survival_time,outcome) ~ subgroup * rcs(hba1c_value,5) + gender + age_cat + imd_quintile + region + duration_cat + number_complications + bmi_cat + smoking_status +
+dd$limits["Adjust to","bmi_value"] <- 30
+model_1 <- cph(Surv(survival_time,outcome) ~ subgroup * rcs(bmi_value,5) + gender + age_cat + imd_quintile + region + duration_cat + hba1c_cat + number_complications + smoking_status +
                  preindex_hypertension + preindex_af + preindex_angina + preindex_myocardialinfarction + preindex_revasc + preindex_ihd + preindex_heartfailure + preindex_pad +
                  recent_hosp_resp_infect + recent_hosp_anything + preindex_asthma + preindex_copd + preindex_bronchiectasis + preindex_pulmonaryfibrosis + preindex_pulmonaryhypertension + 
                  preindex_tia + preindex_stroke + preindex_dementia + preindex_otherneuroconditions + preindex_haem_cancer + preindex_solid_cancer + preindex_solidorgantransplant + preindex_cld +
@@ -213,14 +217,14 @@ model_1 <- cph(Surv(survival_time,outcome) ~ subgroup * rcs(hba1c_value,5) + gen
 
 anova(model_1)
 
-predict_1 <- Predict(model_1, hba1c_value = seq(30,120, by =1), subgroup ="White", ref.zero=TRUE, fun = exp)
+predict_1 <- Predict(model_1, bmi_value = seq(18,50, by =1), subgroup ="White", ref.zero=TRUE, fun = exp)
 predict_1_df <- as.data.frame(predict_1) %>% mutate(subgroup = paste0(subgroup1))
 
 #Repeat for other subgroups
 dd <- datadist(cohort %>% filter(subgroup=="South Asian") %>% select(!cysticfibrosis_diag_date))
 options(datadist="dd")
-dd$limits["Adjust to","hba1c_value"] <- 53
-model_2 <- cph(Surv(survival_time,outcome) ~ subgroup * rcs(hba1c_value,5) + gender + age_cat + imd_quintile + region + duration_cat + number_complications + bmi_cat + smoking_status +
+dd$limits["Adjust to","bmi_value"] <- 30
+model_2 <- cph(Surv(survival_time,outcome) ~ subgroup * rcs(bmi_value,5) + gender + age_cat + imd_quintile + region + duration_cat + hba1c_cat + number_complications + smoking_status +
                  preindex_hypertension + preindex_af + preindex_angina + preindex_myocardialinfarction + preindex_revasc + preindex_ihd + preindex_heartfailure + preindex_pad +
                  recent_hosp_resp_infect + recent_hosp_anything + preindex_asthma + preindex_copd + preindex_bronchiectasis + preindex_pulmonaryfibrosis + preindex_pulmonaryhypertension + 
                  preindex_tia + preindex_stroke + preindex_dementia + preindex_otherneuroconditions + preindex_haem_cancer + preindex_solid_cancer + preindex_solidorgantransplant + preindex_cld +
@@ -228,14 +232,14 @@ model_2 <- cph(Surv(survival_time,outcome) ~ subgroup * rcs(hba1c_value,5) + gen
 
 anova(model_2)
 
-predict_2 <- Predict(model_2, hba1c_value = seq(30,120, by =1), subgroup ="South Asian", ref.zero=TRUE, fun = exp)
+predict_2 <- Predict(model_2, bmi_value = seq(18,50, by =1), subgroup ="South Asian", ref.zero=TRUE, fun = exp)
 predict_2_df <- as.data.frame(predict_2) %>% mutate(subgroup = paste0(subgroup2))
 
 #Repeat for other subgroups
 dd <- datadist(cohort %>% filter(subgroup=="Black") %>% select(!cysticfibrosis_diag_date))
 options(datadist="dd")
-dd$limits["Adjust to","hba1c_value"] <- 53
-model_3 <- cph(Surv(survival_time,outcome) ~ subgroup * rcs(hba1c_value,5) + gender + age_cat + imd_quintile + region + duration_cat + number_complications + bmi_cat + smoking_status +
+dd$limits["Adjust to","bmi_value"] <- 30
+model_3 <- cph(Surv(survival_time,outcome) ~ subgroup * rcs(bmi_value,5) + gender + age_cat + imd_quintile + region + duration_cat + hba1c_cat + number_complications + smoking_status +
                  preindex_hypertension + preindex_af + preindex_angina + preindex_myocardialinfarction + preindex_revasc + preindex_ihd + preindex_heartfailure + preindex_pad +
                  recent_hosp_resp_infect + recent_hosp_anything + preindex_asthma + preindex_copd + preindex_bronchiectasis + preindex_pulmonaryfibrosis + preindex_pulmonaryhypertension + 
                  preindex_tia + preindex_stroke + preindex_dementia + preindex_otherneuroconditions + preindex_haem_cancer + preindex_solid_cancer + preindex_solidorgantransplant + preindex_cld +
@@ -243,23 +247,23 @@ model_3 <- cph(Surv(survival_time,outcome) ~ subgroup * rcs(hba1c_value,5) + gen
 
 anova(model_3)
 
-predict_3 <- Predict(model_3, hba1c_value = seq(30,120, by =1), subgroup ="Black", ref.zero=TRUE, fun = exp)
+predict_3 <- Predict(model_3, bmi_value = seq(18,50, by =1), subgroup ="Black", ref.zero=TRUE, fun = exp)
 predict_3_df <- as.data.frame(predict_3) %>% mutate(subgroup = paste0(subgroup3))
 
 #Combine
 subgroup_df <- predict_1_df %>% rbind(predict_2_df) %>% rbind(predict_3_df)
 
-#Set values for 95%CI outside range to limit values
+#Set values for 95%CI outside plot range to limit values
 subgroup_df <- subgroup_df %>% mutate(lower = ifelse(lower<0.5, 0.5, ifelse(lower>3,3, lower)), upper = ifelse(upper<0.5, 0.5, ifelse(upper>3,3, upper)))
 
 #Plot
-plot<- ggplot(data=subgroup_df,aes(x=hba1c_value, y=yhat, group = subgroup)) +
-  geom_line(data=subgroup_df,aes(x=hba1c_value, y=yhat, color = subgroup), size=0.75) +
-  geom_ribbon(data=subgroup_df,aes(x=hba1c_value,ymin=lower,ymax=upper, group = subgroup, fill = subgroup),alpha=0.2) + 
+plot<- ggplot(data=subgroup_df,aes(x=bmi_value, y=yhat, group = subgroup)) +
+  geom_line(data=subgroup_df,aes(x=bmi_value, y=yhat, color = subgroup), size=0.75) +
+  geom_ribbon(data=subgroup_df,aes(x=bmi_value,ymin=lower,ymax=upper, group = subgroup, fill = subgroup),alpha=0.2) + 
   geom_hline(yintercept =1, linetype = "dashed") +
-  scale_x_continuous(breaks = seq(30,120,10), limits = c(30,120)) +
+  scale_x_continuous(breaks = seq(20,50,10), limits = c(18,50)) +
   scale_y_continuous(breaks = seq(0.5,3,0.5), limits = c(0.5,3)) +
-  labs(x = "HbA1c (mmol/mol)", y = "Hazard ratio",title = "Ethnicity", subtitle = paste0(infection.name)) +
+  labs(x = "BMI (kg/m2)", y = "Hazard ratio", title = "Ethnicity", subtitle = paste0(infection.name)) +
   theme(axis.line = element_line(colour =  "grey50" ),
         plot.title = element_text(size=10, face = "bold"), plot.subtitle = element_text(size=10), plot.margin = margin(1,1,0,1,"cm"),
         axis.text = element_text(size = 10), axis.title = element_text(size = 10),
@@ -274,8 +278,8 @@ cohort <- cohort %>% mutate(subgroup = ifelse(subgroup == "White", "White", ifel
 
 
 #Density line
-density <- ggplot((cohort %>% filter(!is.na(subgroup))), aes(x = hba1c_value, colour = subgroup)) +geom_density(position = "identity", size = 0.75) +
-  scale_x_continuous(breaks = seq(30,120,10), limits = c(30,120)) +
+density <- ggplot((cohort %>% filter(!is.na(subgroup))), aes(x = bmi_value, colour = subgroup)) +geom_density(position = "identity", size = 0.75) +
+  scale_x_continuous(breaks = seq(20,50,10), limits = c(18,50)) +
   theme(legend.title = element_blank(), panel.background = element_blank(), legend.position = "none") +
   theme(axis.ticks.y = element_blank(),
         axis.text.x = element_text(size = 10),
@@ -292,6 +296,7 @@ density
 
 plot <- plot_grid(plot, density, ncol = 1,align = "v", axis = "lr",
                   rel_heights = c(1,0.4), rel_widths = c(1,1))
+
 
 covid_eth_plot <- plot
 covid_eth_plot
@@ -476,11 +481,11 @@ subgroup3 <- "Black"
 cohort <- cohort %>% mutate(subgroup = eth5)
 ################################################################################
 
-##Set reference to 53 for subgroup and then run model with interaction for each subgroup
+##Set reference to 30 for subgroup and then run model with interaction for each subgroup
 dd <- datadist(cohort %>% filter(subgroup=="White") %>% select(!cysticfibrosis_diag_date))
 options(datadist="dd")
-dd$limits["Adjust to","hba1c_value"] <- 53
-model_1 <- cph(Surv(survival_time,outcome) ~ subgroup * rcs(hba1c_value,3) + gender + age_cat + imd_quintile + region + duration_cat + number_complications + bmi_cat + smoking_status +
+dd$limits["Adjust to","bmi_value"] <- 30
+model_1 <- cph(Surv(survival_time,outcome) ~ subgroup * rcs(bmi_value,3) + gender + age_cat + imd_quintile + region + duration_cat + hba1c_cat + number_complications + smoking_status +
                  preindex_hypertension + preindex_af + preindex_angina + preindex_myocardialinfarction + preindex_revasc + preindex_ihd + preindex_heartfailure + preindex_pad +
                  recent_hosp_resp_infect + recent_hosp_anything + preindex_asthma + preindex_copd + preindex_bronchiectasis + preindex_pulmonaryfibrosis + preindex_pulmonaryhypertension + 
                  preindex_tia + preindex_stroke + preindex_dementia + preindex_otherneuroconditions + preindex_haem_cancer + preindex_solid_cancer + preindex_solidorgantransplant + preindex_cld +
@@ -488,14 +493,14 @@ model_1 <- cph(Surv(survival_time,outcome) ~ subgroup * rcs(hba1c_value,3) + gen
 
 anova(model_1)
 
-predict_1 <- Predict(model_1, hba1c_value = seq(30,120, by =1), subgroup ="White", ref.zero=TRUE, fun = exp)
+predict_1 <- Predict(model_1, bmi_value = seq(18,50, by =1), subgroup ="White", ref.zero=TRUE, fun = exp)
 predict_1_df <- as.data.frame(predict_1) %>% mutate(subgroup = paste0(subgroup1))
 
 #Repeat for other subgroups
 dd <- datadist(cohort %>% filter(subgroup=="South Asian") %>% select(!cysticfibrosis_diag_date))
 options(datadist="dd")
-dd$limits["Adjust to","hba1c_value"] <- 53
-model_2 <- cph(Surv(survival_time,outcome) ~ subgroup * rcs(hba1c_value,3) + gender + age_cat + imd_quintile + region + duration_cat + number_complications + bmi_cat + smoking_status +
+dd$limits["Adjust to","bmi_value"] <- 30
+model_2 <- cph(Surv(survival_time,outcome) ~ subgroup * rcs(bmi_value,3) + gender + age_cat + imd_quintile + region + duration_cat + hba1c_cat + number_complications + smoking_status +
                  preindex_hypertension + preindex_af + preindex_angina + preindex_myocardialinfarction + preindex_revasc + preindex_ihd + preindex_heartfailure + preindex_pad +
                  recent_hosp_resp_infect + recent_hosp_anything + preindex_asthma + preindex_copd + preindex_bronchiectasis + preindex_pulmonaryfibrosis + preindex_pulmonaryhypertension + 
                  preindex_tia + preindex_stroke + preindex_dementia + preindex_otherneuroconditions + preindex_haem_cancer + preindex_solid_cancer + preindex_solidorgantransplant + preindex_cld +
@@ -503,14 +508,14 @@ model_2 <- cph(Surv(survival_time,outcome) ~ subgroup * rcs(hba1c_value,3) + gen
 
 anova(model_2)
 
-predict_2 <- Predict(model_2, hba1c_value = seq(30,120, by =1), subgroup ="South Asian", ref.zero=TRUE, fun = exp)
+predict_2 <- Predict(model_2, bmi_value = seq(18,50, by =1), subgroup ="South Asian", ref.zero=TRUE, fun = exp)
 predict_2_df <- as.data.frame(predict_2) %>% mutate(subgroup = paste0(subgroup2))
 
 #Repeat for other subgroups
 dd <- datadist(cohort %>% filter(subgroup=="Black") %>% select(!cysticfibrosis_diag_date))
 options(datadist="dd")
-dd$limits["Adjust to","hba1c_value"] <- 53
-model_3 <- cph(Surv(survival_time,outcome) ~ subgroup * rcs(hba1c_value,3) + gender + age_cat + imd_quintile + region + duration_cat + number_complications + bmi_cat + smoking_status +
+dd$limits["Adjust to","bmi_value"] <- 30
+model_3 <- cph(Surv(survival_time,outcome) ~ subgroup * rcs(bmi_value,3) + gender + age_cat + imd_quintile + region + duration_cat + hba1c_cat + number_complications + smoking_status +
                  preindex_hypertension + preindex_af + preindex_angina + preindex_myocardialinfarction + preindex_revasc + preindex_ihd + preindex_heartfailure + preindex_pad +
                  recent_hosp_resp_infect + recent_hosp_anything + preindex_asthma + preindex_copd + preindex_bronchiectasis + preindex_pulmonaryfibrosis + preindex_pulmonaryhypertension + 
                  preindex_tia + preindex_stroke + preindex_dementia + preindex_otherneuroconditions + preindex_haem_cancer + preindex_solid_cancer + preindex_solidorgantransplant + preindex_cld +
@@ -518,7 +523,7 @@ model_3 <- cph(Surv(survival_time,outcome) ~ subgroup * rcs(hba1c_value,3) + gen
 
 anova(model_3)
 
-predict_3 <- Predict(model_3, hba1c_value = seq(30,120, by =1), subgroup ="Black", ref.zero=TRUE, fun = exp)
+predict_3 <- Predict(model_3, bmi_value = seq(18,50, by =1), subgroup ="Black", ref.zero=TRUE, fun = exp)
 predict_3_df <- as.data.frame(predict_3) %>% mutate(subgroup = paste0(subgroup3))
 
 #Combine
@@ -528,13 +533,13 @@ subgroup_df <- predict_1_df %>% rbind(predict_2_df) %>% rbind(predict_3_df)
 subgroup_df <- subgroup_df %>% mutate(lower = ifelse(lower<0.5, 0.5, ifelse(lower>3,3, lower)), upper = ifelse(upper<0.5, 0.5, ifelse(upper>3,3, upper)))
 
 #Plot
-plot<- ggplot(data=subgroup_df,aes(x=hba1c_value, y=yhat, group = subgroup)) +
-  geom_line(data=subgroup_df,aes(x=hba1c_value, y=yhat, color = subgroup), size=0.75) +
-  geom_ribbon(data=subgroup_df,aes(x=hba1c_value,ymin=lower,ymax=upper, group = subgroup, fill = subgroup),alpha=0.2) + 
+plot<- ggplot(data=subgroup_df,aes(x=bmi_value, y=yhat, group = subgroup)) +
+  geom_line(data=subgroup_df,aes(x=bmi_value, y=yhat, color = subgroup), size=0.75) +
+  geom_ribbon(data=subgroup_df,aes(x=bmi_value,ymin=lower,ymax=upper, group = subgroup, fill = subgroup),alpha=0.2) + 
   geom_hline(yintercept =1, linetype = "dashed") +
-  scale_x_continuous(breaks = seq(30,120,10), limits = c(30,120)) +
+  scale_x_continuous(breaks = seq(20,50,10), limits = c(18,50)) +
   scale_y_continuous(breaks = seq(0.5,3,0.5), limits = c(0.5,3)) +
-  labs(x = "HbA1c (mmol/mol)", y = "Hazard ratio", title = " ", subtitle = paste0(infection.name)) +
+  labs(x = "BMI (kg/m2)", y = "Hazard ratio", title = " ", subtitle = paste0(infection.name)) +
   theme(axis.line = element_line(colour =  "grey50" ),
         plot.title = element_text(size=10, face = "bold"), plot.subtitle = element_text(size=10), plot.margin = margin(1,1,0,1,"cm"),
         axis.text = element_text(size = 10), axis.title = element_text(size = 10),
@@ -549,8 +554,8 @@ cohort <- cohort %>% mutate(subgroup = ifelse(subgroup == "White", "White", ifel
 
 
 #Density line
-density <- ggplot((cohort %>% filter(!is.na(subgroup))), aes(x = hba1c_value, colour = subgroup)) +geom_density(position = "identity", size = 0.75) +
-  scale_x_continuous(breaks = seq(30,120,10), limits = c(30,120)) +
+density <- ggplot((cohort %>% filter(!is.na(subgroup))), aes(x = bmi_value, colour = subgroup)) +geom_density(position = "identity", size = 0.75) +
+  scale_x_continuous(breaks = seq(20,50,10), limits = c(18,50)) +
   theme(legend.title = element_blank(), panel.background = element_blank(), legend.position = "none") +
   theme(axis.ticks.y = element_blank(),
         axis.text.x = element_text(size = 10),
@@ -570,7 +575,6 @@ plot <- plot_grid(plot, density, ncol = 1,align = "v", axis = "lr",
 
 flu_eth_plot <- plot
 flu_eth_plot
-
 
 ###PNEUMONIA####################################################################
 cohort.name <- "sep2016"
@@ -751,11 +755,11 @@ subgroup3 <- "Black"
 cohort <- cohort %>% mutate(subgroup = eth5)
 ################################################################################
 
-##Set reference to 53 for subgroup and then run model with interaction for each subgroup
+##Set reference to 30 for subgroup and then run model with interaction for each subgroup
 dd <- datadist(cohort %>% filter(subgroup=="White") %>% select(!cysticfibrosis_diag_date))
 options(datadist="dd")
-dd$limits["Adjust to","hba1c_value"] <- 53
-model_1 <- cph(Surv(survival_time,outcome) ~ subgroup * rcs(hba1c_value,5) + gender + age_cat + imd_quintile + region + duration_cat + number_complications + bmi_cat + smoking_status +
+dd$limits["Adjust to","bmi_value"] <- 30
+model_1 <- cph(Surv(survival_time,outcome) ~ subgroup * rcs(bmi_value,5) + gender + age_cat + imd_quintile + region + duration_cat + hba1c_cat + number_complications + smoking_status +
                  preindex_hypertension + preindex_af + preindex_angina + preindex_myocardialinfarction + preindex_revasc + preindex_ihd + preindex_heartfailure + preindex_pad +
                  recent_hosp_resp_infect + recent_hosp_anything + preindex_asthma + preindex_copd + preindex_bronchiectasis + preindex_pulmonaryfibrosis + preindex_pulmonaryhypertension + 
                  preindex_tia + preindex_stroke + preindex_dementia + preindex_otherneuroconditions + preindex_haem_cancer + preindex_solid_cancer + preindex_solidorgantransplant + preindex_cld +
@@ -763,14 +767,14 @@ model_1 <- cph(Surv(survival_time,outcome) ~ subgroup * rcs(hba1c_value,5) + gen
 
 anova(model_1)
 
-predict_1 <- Predict(model_1, hba1c_value = seq(30,120, by =1), subgroup ="White", ref.zero=TRUE, fun = exp)
+predict_1 <- Predict(model_1, bmi_value = seq(18,50, by =1), subgroup ="White", ref.zero=TRUE, fun = exp)
 predict_1_df <- as.data.frame(predict_1) %>% mutate(subgroup = paste0(subgroup1))
 
 #Repeat for other subgroups
 dd <- datadist(cohort %>% filter(subgroup=="South Asian") %>% select(!cysticfibrosis_diag_date))
 options(datadist="dd")
-dd$limits["Adjust to","hba1c_value"] <- 53
-model_2 <- cph(Surv(survival_time,outcome) ~ subgroup * rcs(hba1c_value,5) + gender + age_cat + imd_quintile + region + duration_cat + number_complications + bmi_cat + smoking_status +
+dd$limits["Adjust to","bmi_value"] <- 30
+model_2 <- cph(Surv(survival_time,outcome) ~ subgroup * rcs(bmi_value,5) + gender + age_cat + imd_quintile + region + duration_cat + hba1c_cat + number_complications + smoking_status +
                  preindex_hypertension + preindex_af + preindex_angina + preindex_myocardialinfarction + preindex_revasc + preindex_ihd + preindex_heartfailure + preindex_pad +
                  recent_hosp_resp_infect + recent_hosp_anything + preindex_asthma + preindex_copd + preindex_bronchiectasis + preindex_pulmonaryfibrosis + preindex_pulmonaryhypertension + 
                  preindex_tia + preindex_stroke + preindex_dementia + preindex_otherneuroconditions + preindex_haem_cancer + preindex_solid_cancer + preindex_solidorgantransplant + preindex_cld +
@@ -778,14 +782,14 @@ model_2 <- cph(Surv(survival_time,outcome) ~ subgroup * rcs(hba1c_value,5) + gen
 
 anova(model_2)
 
-predict_2 <- Predict(model_2, hba1c_value = seq(30,120, by =1), subgroup ="South Asian", ref.zero=TRUE, fun = exp)
+predict_2 <- Predict(model_2, bmi_value = seq(18,50, by =1), subgroup ="South Asian", ref.zero=TRUE, fun = exp)
 predict_2_df <- as.data.frame(predict_2) %>% mutate(subgroup = paste0(subgroup2))
 
 #Repeat for other subgroups
 dd <- datadist(cohort %>% filter(subgroup=="Black") %>% select(!cysticfibrosis_diag_date))
 options(datadist="dd")
-dd$limits["Adjust to","hba1c_value"] <- 53
-model_3 <- cph(Surv(survival_time,outcome) ~ subgroup * rcs(hba1c_value,5) + gender + age_cat + imd_quintile + region + duration_cat + number_complications + bmi_cat + smoking_status +
+dd$limits["Adjust to","bmi_value"] <- 30
+model_3 <- cph(Surv(survival_time,outcome) ~ subgroup * rcs(bmi_value,5) + gender + age_cat + imd_quintile + region + duration_cat + hba1c_cat + number_complications + smoking_status +
                  preindex_hypertension + preindex_af + preindex_angina + preindex_myocardialinfarction + preindex_revasc + preindex_ihd + preindex_heartfailure + preindex_pad +
                  recent_hosp_resp_infect + recent_hosp_anything + preindex_asthma + preindex_copd + preindex_bronchiectasis + preindex_pulmonaryfibrosis + preindex_pulmonaryhypertension + 
                  preindex_tia + preindex_stroke + preindex_dementia + preindex_otherneuroconditions + preindex_haem_cancer + preindex_solid_cancer + preindex_solidorgantransplant + preindex_cld +
@@ -793,7 +797,7 @@ model_3 <- cph(Surv(survival_time,outcome) ~ subgroup * rcs(hba1c_value,5) + gen
 
 anova(model_3)
 
-predict_3 <- Predict(model_3, hba1c_value = seq(30,120, by =1), subgroup ="Black", ref.zero=TRUE, fun = exp)
+predict_3 <- Predict(model_3, bmi_value = seq(18,50, by =1), subgroup ="Black", ref.zero=TRUE, fun = exp)
 predict_3_df <- as.data.frame(predict_3) %>% mutate(subgroup = paste0(subgroup3))
 
 #Combine
@@ -803,13 +807,13 @@ subgroup_df <- predict_1_df %>% rbind(predict_2_df) %>% rbind(predict_3_df)
 subgroup_df <- subgroup_df %>% mutate(lower = ifelse(lower<0.5, 0.5, ifelse(lower>3,3, lower)), upper = ifelse(upper<0.5, 0.5, ifelse(upper>3,3, upper)))
 
 #Plot
-plot<- ggplot(data=subgroup_df,aes(x=hba1c_value, y=yhat, group = subgroup)) +
-  geom_line(data=subgroup_df,aes(x=hba1c_value, y=yhat, color = subgroup), size=0.75) +
-  geom_ribbon(data=subgroup_df,aes(x=hba1c_value,ymin=lower,ymax=upper, group = subgroup, fill = subgroup),alpha=0.2) + 
+plot<- ggplot(data=subgroup_df,aes(x=bmi_value, y=yhat, group = subgroup)) +
+  geom_line(data=subgroup_df,aes(x=bmi_value, y=yhat, color = subgroup), size=0.75) +
+  geom_ribbon(data=subgroup_df,aes(x=bmi_value,ymin=lower,ymax=upper, group = subgroup, fill = subgroup),alpha=0.2) + 
   geom_hline(yintercept =1, linetype = "dashed") +
-  scale_x_continuous(breaks = seq(30,120,10), limits = c(30,120)) +
+  scale_x_continuous(breaks = seq(20,50,10), limits = c(18,50)) +
   scale_y_continuous(breaks = seq(0.5,3,0.5), limits = c(0.5,3)) +
-  labs(x = "HbA1c (mmol/mol)", y = "Hazard ratio", title = " ", subtitle = paste0(infection.name)) +
+  labs(x = "BMI (kg/m2)", y = "Hazard ratio", title = " ", subtitle = paste0(infection.name)) +
   theme(axis.line = element_line(colour =  "grey50" ),
         plot.title = element_text(size=10, face = "bold"), plot.subtitle = element_text(size=10), plot.margin = margin(1,1,0,1,"cm"),
         axis.text = element_text(size = 10), axis.title = element_text(size = 10),
@@ -824,8 +828,8 @@ cohort <- cohort %>% mutate(subgroup = ifelse(subgroup == "White", "White", ifel
 
 
 #Density line
-density <- ggplot((cohort %>% filter(!is.na(subgroup))), aes(x = hba1c_value, colour = subgroup)) +geom_density(position = "identity", size = 0.75) +
-  scale_x_continuous(breaks = seq(30,120,10), limits = c(30,120)) +
+density <- ggplot((cohort %>% filter(!is.na(subgroup))), aes(x = bmi_value, colour = subgroup)) +geom_density(position = "identity", size = 0.75) +
+  scale_x_continuous(breaks = seq(20,50,10), limits = c(18,50)) +
   theme(legend.title = element_blank(), panel.background = element_blank(), legend.position = "none") +
   theme(axis.ticks.y = element_blank(),
         axis.text.x = element_text(size = 10),
@@ -852,10 +856,12 @@ ethnicity_plot <- covid_eth_plot + flu_eth_plot + pneumo_eth_plot
 
 #Save
 pdf.options(reset = TRUE, onefile = TRUE)
-pdf("SFig3a_T2_hosp_HbA1c_splines_ethnicity.pdf",width=16,height=6)
+pdf("SFig3b_T2_hosp_BMI_splines_ethnicity.pdf",width=16,height=6)
 ethnicity_plot
 dev.off()
 
 
 #END#
 rm(list=ls())
+
+

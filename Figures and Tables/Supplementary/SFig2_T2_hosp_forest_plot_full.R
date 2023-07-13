@@ -1,5 +1,7 @@
 ################################################################################
-###ANALYSIS#####################################################################
+#Script to produce Supplementary Figure 2
+#Forest plot of all risk factor associations for Covid-19, influenza, and pneumonia hospitalisation in type 2 diabetes
+#Hazard ratios from multivariable Cox proportional hazards models for each infection
 ################################################################################
 
 .libPaths("C:/Users/rh530/OneDrive - University of Exeter/R/win-library/4.1")
@@ -27,14 +29,14 @@ analysis = cprd$analysis("Rhian_covid")
 ###Set first cohort and outcome#################################################
 cohort.name <- "feb2020"
 infection <- "covid"
-outcome <- "hosp_p" #these will be pasted into output file names
+outcome <- "hosp" #these will be pasted into output file names
 #Set cohort
 cohort <- cohort %>% analysis$cached(paste0(cohort.name, "_", infection, "_outcomes"), unique_indexes = "patid", indexes = "hosp_date")
 #Only want patids with linkage
 linkage_patids <- cprd$tables$patidsWithLinkage %>% filter(n_patid_hes <=20) %>% select(patid)
 cohort <- cohort %>% inner_join(linkage_patids)
 #Set outcome and outcome date variable
-cohort <- cohort %>% mutate (outcome = primary_diag_hosp, outcome_date = hosp_date_primary)
+cohort <- cohort %>% mutate (outcome = hospitalisation_outcome, outcome_date = hosp_date)
 #Set index and end dates
 index.date = as.Date("2020-02-01") #change these for different cohorts
 end.date = as.Date("2020-10-31")
@@ -63,6 +65,10 @@ cohort <- cohort %>% filter(dm_diag_date_all <= index.date)
 
 #Check survival time distribution for those with outcome
 cohort %>% filter(outcome ==1) %>% ggplot(aes(survival_time)) +  geom_histogram(binwidth = 5, colour= "white", fill="plum3")
+
+#Mean follow-up
+mean(cohort$survival_time)
+sd(cohort$survival_time)
 
 #Setting variables to factors and setting reference category
 #Gender
@@ -206,14 +212,14 @@ cohort_covid <- cohort
 ###Set next cohort and outcome##################################################
 cohort.name <- "sep2016"
 infection <- "influenza"
-outcome <- "hosp_p" #these will be pasted into output file names
+outcome <- "hosp" #these will be pasted into output file names
 #Set cohort
 cohort <- cohort %>% analysis$cached(paste0(cohort.name, "_", infection, "_outcomes"), unique_indexes = "patid", indexes = "hosp_date")
 #Only want patids with linkage
 linkage_patids <- cprd$tables$patidsWithLinkage %>% filter(n_patid_hes <=20) %>% select(patid)
 cohort <- cohort %>% inner_join(linkage_patids)
 #Set outcome and outcome date variable
-cohort <- cohort %>% mutate (outcome = primary_diag_hosp, outcome_date = hosp_date_primary)
+cohort <- cohort %>% mutate (outcome = hospitalisation_outcome, outcome_date = hosp_date)
 #Set index and end dates
 index.date = as.Date("2016-09-01") #change these for different cohorts
 end.date = as.Date("2019-05-31")
@@ -242,6 +248,10 @@ cohort <- cohort %>% filter(dm_diag_date_all <= index.date)
 
 #Check survival time distribution for those with outcome
 cohort %>% filter(outcome ==1) %>% ggplot(aes(survival_time)) +  geom_histogram(binwidth = 5, colour= "white", fill="plum3")
+
+#Mean follow-up
+mean(cohort$survival_time)
+sd(cohort$survival_time)
 
 #Setting variables to factors and setting reference category
 #Gender
@@ -385,14 +395,14 @@ cohort_flu <- cohort
 ###Set next cohort and outcome##################################################
 cohort.name <- "sep2016"
 infection <- "pneumonia"
-outcome <- "hosp_p" #these will be pasted into output file names
+outcome <- "hosp" #these will be pasted into output file names
 #Set cohort
 cohort <- cohort %>% analysis$cached(paste0(cohort.name, "_", infection, "_outcomes"), unique_indexes = "patid", indexes = "hosp_date")
 #Only want patids with linkage
 linkage_patids <- cprd$tables$patidsWithLinkage %>% filter(n_patid_hes <=20) %>% select(patid)
 cohort <- cohort %>% inner_join(linkage_patids)
 #Set outcome and outcome date variable
-cohort <- cohort %>% mutate (outcome = primary_diag_hosp, outcome_date = hosp_date_primary)
+cohort <- cohort %>% mutate (outcome = hospitalisation_outcome, outcome_date = hosp_date)
 #Set index and end dates
 index.date = as.Date("2016-09-01") #change these for different cohorts
 end.date = as.Date("2019-05-31")
@@ -421,6 +431,10 @@ cohort <- cohort %>% filter(dm_diag_date_all <= index.date)
 
 #Check survival time distribution for those with outcome
 cohort %>% filter(outcome ==1) %>% ggplot(aes(survival_time)) +  geom_histogram(binwidth = 5, colour= "white", fill="plum3")
+
+#Mean follow-up
+mean(cohort$survival_time)
+sd(cohort$survival_time)
 
 #Setting variables to factors and setting reference category
 #Gender
@@ -864,6 +878,7 @@ model_df_pneumo <- model_df_pneumo %>% mutate(row_name = ifelse(row_name == "gen
   mutate(row_name = ifelse(row_name == "labas_6mYes", "Long acting beta agonists", row_name)) %>% 
   mutate(row_name = ifelse(row_name == "ltras_6mYes", "Leukotriene receptor antagonists", row_name))
 
+
 coefs1 <- model_df_covid %>% select(row_name, mean = exp.coef., lower = lower..95, upper = upper..95, p_value = Pr...z..)
 coefs2 <- model_df_flu %>% select(row_name, mean = exp.coef., lower = lower..95, upper = upper..95, p_value = Pr...z..)
 coefs3 <- model_df_pneumo %>% select(row_name, mean = exp.coef., lower = lower..95, upper = upper..95, p_value = Pr...z..)
@@ -910,33 +925,33 @@ tick <- c(0.25, 0.5, 1, 2, 5)
 
 #Generate forest plot
 fp <- coefs %>% forestplot(labeltext = row_name,
-                           mean = c(mean.x, mean.y, mean),
-                           lower = c(lower.x, lower.y, lower),
-                           upper = c(upper.x, upper.y, upper),
-                           hrzl_lines = gpar(col="#444444"),
-                           col=fpColors(box=c("#fc8d62","#66c2a5", "#8da0cb"), lines=c("#fc8d62","#66c2a5", "#8da0cb"), zero = "gray50"), # this changes the box/ line colour- use when have multiple infections plotted
-                           xticks = tick,
-                           boxsize = .2,
-                           graphwidth = unit(10, 'cm'),
-                           clip = c(0.15,5.5),
-                           zero = 1,
-                           xlog = TRUE,
-                           ci.vertices = TRUE, #makes ends T
-                           new_page = TRUE,
-                           fn.ci_norm = c(fpDrawNormalCI, fpDrawCircleCI, fpDrawDiamondCI), #can use this to change shape of box
-                           lty.ci =1, #this is confidence interval line type
-                           txt_gp = fpTxtGp(label = gpar(cex = 0.7), ticks  = gpar(cex = 0.7), xlab = gpar(cex = 0.7), legend = gpar(cex = 0.7), summary = gpar(cex = 0.7)),
-                           xlab = "Hazard ratio",
-                           is.summary = c(TRUE, rep(FALSE, 2), TRUE, rep(FALSE,7), TRUE, rep(FALSE,6), TRUE, rep(FALSE,6), TRUE, rep(FALSE,7), TRUE, rep(FALSE,7), TRUE, rep(FALSE,4), TRUE, rep(FALSE,7), TRUE, rep(FALSE,4), TRUE, TRUE, rep(FALSE,8), TRUE, rep(FALSE,2), TRUE, rep(FALSE,2), TRUE, rep(FALSE,4), TRUE, rep(FALSE,2), TRUE, rep(FALSE,2), TRUE, rep(FALSE,7), TRUE, rep(FALSE, 4), TRUE, rep(FALSE,3)),
-                           legend = c("Covid", "Influenza", "Pneumonia"),
-                           legend_args = fpLegend(pos = list(x=.75, y=1, align = "horizontal"))
+                     mean = c(mean.x, mean.y, mean),
+                     lower = c(lower.x, lower.y, lower),
+                     upper = c(upper.x, upper.y, upper),
+                     hrzl_lines = gpar(col="#444444"),
+                     col=fpColors(box=c("#fc8d62","#66c2a5", "#8da0cb"), lines=c("#fc8d62","#66c2a5", "#8da0cb"), zero = "gray50"), # this changes the box/ line colour- use when have multiple infections plotted
+                     xticks = tick,
+                     boxsize = .2,
+                     graphwidth = unit(10, 'cm'),
+                     clip = c(0.2,5),
+                     zero = 1,
+                     xlog = TRUE,
+                     ci.vertices = TRUE, #makes ends T
+                     new_page = TRUE,
+                     fn.ci_norm = c(fpDrawNormalCI, fpDrawCircleCI, fpDrawDiamondCI), #can use this to change shape of box
+                     lty.ci =1, #this is confidence interval line type
+                     txt_gp = fpTxtGp(label = gpar(cex = 0.7), ticks  = gpar(cex = 0.7), xlab = gpar(cex = 0.7), legend = gpar(cex = 0.7), summary = gpar(cex = 0.7)),
+                     xlab = "Hazard ratio",
+                     is.summary = c(TRUE, rep(FALSE, 2), TRUE, rep(FALSE,7), TRUE, rep(FALSE,6), TRUE, rep(FALSE,6), TRUE, rep(FALSE,7), TRUE, rep(FALSE,7), TRUE, rep(FALSE,4), TRUE, rep(FALSE,7), TRUE, rep(FALSE,4), TRUE, TRUE, rep(FALSE,8), TRUE, rep(FALSE,2), TRUE, rep(FALSE,2), TRUE, rep(FALSE,4), TRUE, rep(FALSE,2), TRUE, rep(FALSE,2), TRUE, rep(FALSE,7), TRUE, rep(FALSE, 4), TRUE, rep(FALSE,3)),
+                     legend = c("Covid", "Influenza", "Pneumonia"),
+                     legend_args = fpLegend(pos = list(x=.75, y=1, align = "horizontal"))
 )
 fp
 
 
 #Save these to pdf
 pdf.options(reset = TRUE, onefile = TRUE)
-pdf("SFig8_sensitivity_T2_hosp_primary_diagnosis_forest_plot.pdf",width=10,height=14)
+pdf("SFig2_T2_hosp_forest_plot_full.pdf",width=10,height=14)
 fp
 dev.off()
 

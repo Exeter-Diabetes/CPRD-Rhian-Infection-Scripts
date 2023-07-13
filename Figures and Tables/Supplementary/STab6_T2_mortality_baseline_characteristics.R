@@ -1,5 +1,6 @@
 ################################################################################
-###Descriptive tables###########################################################
+#Script to produce Supplementary Table 6
+#Table of full baseline characteristics of 2020 and 2016 cohorts and people who died with Covid-19 and pneumonia with type 2 diabetes
 ################################################################################
 
 .libPaths("C:/Users/rh530/OneDrive - University of Exeter/R/win-library/4.1")
@@ -24,14 +25,14 @@ analysis = cprd$analysis("Rhian_covid")
 ###Set cohort###################################################################
 cohort.name <- "feb2020"
 infection <- "covid"
-outcome <- "death_p" #these will be pasted into output file names
+outcome <- "death" #these will be pasted into output file names
 #Set cohort
 cohort <- cohort %>% analysis$cached(paste0(cohort.name, "_", infection, "_outcomes"), unique_indexes = "patid", indexes = "dod")
 #Only want patids with linkage
 linkage_patids <- cprd$tables$patidsWithLinkage %>% filter(n_patid_death <=20 & n_patid_hes <=20) %>% select(patid)
 cohort <- cohort %>% inner_join(linkage_patids)
 #Set outcome and outcome date variable
-cohort <- cohort %>% mutate (outcome = primary_death_cause, outcome_date = dod)
+cohort <- cohort %>% mutate (outcome = death_outcome, outcome_date = dod)
 #Set index and end dates
 index.date = as.Date("2020-02-01") #change these for different cohorts
 end.date = as.Date("2020-10-31")
@@ -44,10 +45,8 @@ cohort <- cohort %>% mutate(survival_date = end.date) %>% mutate(survival_date =
 
 #Collect
 cohort <- collect(cohort)
-
 #Filter cohort
 cohort <- cohort %>% filter(diabetes_type == "type 2" & dm_diag_age_all >=20 & age_at_index >=18)
-
 #Exclude those with cystic fibrosis
 cohort <- cohort %>% filter(is.na(cysticfibrosis_diag_date))
 
@@ -193,14 +192,14 @@ tabprint_covid <- tabprint1 %>% rename(All = Overall) %>% left_join(tabprint2, b
 ###Set cohort###################################################################
 cohort.name <- "sep2016"
 infection <- "pneumonia"
-outcome <- "death_p" #these will be pasted into output file names
+outcome <- "death" #these will be pasted into output file names
 #Set cohort
 cohort <- cohort %>% analysis$cached(paste0(cohort.name, "_", infection, "_outcomes"), unique_indexes = "patid", indexes = "dod")
 #Only want patids with linkage
 linkage_patids <- cprd$tables$patidsWithLinkage %>% filter(n_patid_death <=20 & n_patid_hes <=20) %>% select(patid)
 cohort <- cohort %>% inner_join(linkage_patids)
 #Set outcome and outcome date variable
-cohort <- cohort %>% mutate (outcome = primary_death_cause, outcome_date = dod)
+cohort <- cohort %>% mutate (outcome = death_outcome, outcome_date = dod)
 #Set index and end dates
 index.date = as.Date("2016-09-01") #change these for different cohorts
 end.date = as.Date("2019-05-31")
@@ -213,10 +212,8 @@ cohort <- cohort %>% mutate(survival_date = end.date) %>% mutate(survival_date =
 
 #Collect
 cohort <- collect(cohort)
-
 #Filter cohort
 cohort <- cohort %>% filter(diabetes_type == "type 2" & dm_diag_age_all >=20 & age_at_index >=18)
-
 #Exclude those with cystic fibrosis
 cohort <- cohort %>% filter(is.na(cysticfibrosis_diag_date))
 
@@ -438,7 +435,7 @@ kableExtra::kable(tab,format="html", align="lll") %>%
   column_spec(3,width="7cm") %>%
   column_spec(4,width="6cm") %>%
   column_spec(5,width="7cm") %>%
-  cat(.,file="STab10_sensitivity_T2_mortality_primary_cause_baseline_characteristics.html")
+  cat(.,file="STab6_T2_mortality_baseline_characteristics.html")
 
 ###END##########################################################################
 rm(list=ls())

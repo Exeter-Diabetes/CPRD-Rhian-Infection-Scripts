@@ -1,5 +1,8 @@
 ################################################################################
-###ANALYSIS#####################################################################
+#Script to produce Supplementary Figure 6a
+#Plot of the association of continuous HbA1c with hospitalisation for Covid-19, influenza, and pneumonia in type 1 diabetes
+#Using restricted cubic splines
+#Hazard ratios from multivariable Cox proportional hazards models for each infection
 ################################################################################
 
 .libPaths("C:/Users/rh530/OneDrive - University of Exeter/R/win-library/4.1")

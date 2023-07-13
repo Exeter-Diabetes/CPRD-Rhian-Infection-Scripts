@@ -1,5 +1,6 @@
 ################################################################################
-###ANALYSIS#####################################################################
+#Script to produce Supplementary Tables 3a, 3b, and 3c
+#Table of frequencies of ICD-10 codes recorded for hospitalisation outcomes for Covid-19, influenza, and pneumonia in type 2 diabetes
 ################################################################################
 
 .libPaths("C:/Users/rh530/OneDrive - University of Exeter/R/win-library/4.1")
