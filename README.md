@@ -19,6 +19,7 @@ Cohorts:
 
    2016 influenza and pneumonia cohorts (index date - 01/09/2016)
 
+
 2. Adding outcomes:
 
    Covid-19 hospitalisation (HES) and mortality (ONS)
@@ -26,6 +27,7 @@ Cohorts:
    Influenza hospitalisation (HES) and mortality (ONS)
 
    Pneumonia hospitalisation (HES) and mortality (ONS)
+
 
 Figures and Tables:
 
@@ -38,6 +40,7 @@ Figures and Tables:
    Figure 2 - Plot of the association of continuous HbA1c with hospitalisation, overall and by age and sex, in type 2 diabetes
 
    Figure 3 - Plot of the association of continuous BMI with hospitalisation, overall and by age and sex, in type 2 diabetes
+
 
 
 4. Supplementary
